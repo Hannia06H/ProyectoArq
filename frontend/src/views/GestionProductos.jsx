@@ -12,6 +12,7 @@ export default function GestionProductos() {
     stock: ""
   });
   const [filtro, setFiltro] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState("");
 
   const rol = localStorage.getItem("rol");
 
@@ -32,17 +33,14 @@ export default function GestionProductos() {
     e.preventDefault();
     try {
       if (formulario.id) {
-        // ACTUALIZAR producto existente
         await axios.put(
           `http://localhost:5000/api/productos/${formulario.id}`,
           formulario
         );
       } else {
-        // CREAR nuevo producto
         await axios.post("http://localhost:5000/api/productos", formulario);
       }
 
-      // Limpiar formulario y recargar
       setFormulario({
         id: null,
         nombre: "",
@@ -53,6 +51,7 @@ export default function GestionProductos() {
       });
       obtenerProductos();
     } catch (error) {
+      console.error(error);
       alert("Error al guardar producto");
     }
   };
@@ -81,7 +80,15 @@ export default function GestionProductos() {
   return (
     <div style={{ display: "flex", padding: "2rem", gap: "2rem" }}>
       {/* FORMULARIO */}
-      <form onSubmit={handleSubmit} style={{ width: "40%" }}>
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          width: "40%",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px"
+        }}
+      >
         <h2>{formulario.id ? "Editar" : "Agregar"} producto</h2>
         <input
           type="text"
@@ -106,13 +113,30 @@ export default function GestionProductos() {
           onChange={handleChange}
           required
         />
-        <input
-          type="text"
+        <select
           name="categoria"
-          placeholder="Categoría"
           value={formulario.categoria}
           onChange={handleChange}
-        />
+          required
+        >
+          <option value="">Selecciona categoría</option>
+          <option value="Electrónicos">Electrónicos</option>
+          <option value="Ropa">Ropa</option>
+          <option value="Calzado">Calzado</option>
+          <option value="Accesorios">Accesorios</option>
+          <option value="Hogar">Hogar</option>
+          <option value="Libros">Libros</option>
+          <option value="Papelería">Papelería</option>
+          <option value="Oficina">Oficina</option>
+          <option value="Deportes">Deportes</option>
+          <option value="Belleza">Belleza</option>
+          <option value="Juguetes">Juguetes</option>
+          <option value="Muebles">Muebles</option>
+          <option value="Alimentos">Alimentos</option>
+          <option value="Jardín">Jardín</option>
+          <option value="Bricolaje">Bricolaje</option>
+          <option value="Arte">Arte</option>
+        </select>
         <input
           type="number"
           name="stock"
@@ -126,7 +150,7 @@ export default function GestionProductos() {
         </button>
       </form>
 
-      {/* TABLA */}
+      {/* TABLA CON SCROLL */}
       <div style={{ width: "60%" }}>
         <h2>Productos registrados</h2>
         <input
@@ -134,41 +158,72 @@ export default function GestionProductos() {
           placeholder="Buscar por nombre"
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
-          style={{ marginBottom: "1rem", width: "100%", padding: "8px" }}
+          style={{ marginBottom: "0.5rem", padding: "8px", width: "49%" }}
         />
-        <table border="1" cellPadding="10" width="100%">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Descripción</th>
-              <th>Precio</th>
-              <th>Categoría</th>
-              <th>Stock</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {productos
-              .filter((p) =>
-                p[1].toLowerCase().includes(filtro.toLowerCase())
-              )
-              .map((p) => (
-                <tr key={p[0]}>
-                  <td>{p[1]}</td>
-                  <td>{p[2]}</td>
-                  <td>${p[3]}</td>
-                  <td>{p[4]}</td>
-                  <td>{p[5]}</td>
-                  <td>
-                    <button onClick={() => handleEditar(p)}>Editar</button>
-                    <button onClick={() => eliminarProducto(p[0])}>
-                      Eliminar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+        <select
+          value={filtroCategoria}
+          onChange={(e) => setFiltroCategoria(e.target.value)}
+          style={{ marginBottom: "0.5rem", padding: "8px", width: "49%", float: "right" }}
+        >
+          <option value="">Todas las categorías</option>
+          <option value="Electrónicos">Electrónicos</option>
+          <option value="Ropa">Ropa</option>
+          <option value="Calzado">Calzado</option>
+          <option value="Accesorios">Accesorios</option>
+          <option value="Hogar">Hogar</option>
+          <option value="Libros">Libros</option>
+          <option value="Papelería">Papelería</option>
+          <option value="Oficina">Oficina</option>
+          <option value="Deportes">Deportes</option>
+          <option value="Belleza">Belleza</option>
+          <option value="Juguetes">Juguetes</option>
+          <option value="Muebles">Muebles</option>
+          <option value="Alimentos">Alimentos</option>
+          <option value="Jardín">Jardín</option>
+          <option value="Bricolaje">Bricolaje</option>
+          <option value="Arte">Arte</option>
+        </select>
+
+        <div style={{ maxHeight: "500px", overflowY: "auto", marginTop: "1rem" }}>
+        <table
+            border="1"
+            cellPadding="10"
+            width="100%"
+            style={{ tableLayout: "fixed", minWidth: "700px" }}
+        >
+
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Categoría</th>
+                <th>Stock</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productos
+                .filter((p) =>
+                  p[1].toLowerCase().includes(filtro.toLowerCase()) &&
+                  (filtroCategoria === "" || p[4] === filtroCategoria)
+                )
+                .map((p) => (
+                  <tr key={p[0]}>
+                    <td>{p[1]}</td>
+                    <td>{p[2]}</td>
+                    <td>${p[3]}</td>
+                    <td>{p[4]}</td>
+                    <td>{p[5]}</td>
+                    <td>
+                      <button onClick={() => handleEditar(p)}>Editar</button>
+                      <button onClick={() => eliminarProducto(p[0])}>Eliminar</button>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

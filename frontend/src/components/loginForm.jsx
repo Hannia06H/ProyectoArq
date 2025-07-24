@@ -9,20 +9,37 @@ export default function LoginForm() {
   const [msg, setMsg] = useState('');
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post('http://localhost:4000/api/login', {
-        email,
-        password
-      });
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('rol', res.data.rol);
-      navigate('/dashboard');
-    } catch (err) {
-      const error = err.response?.data?.error || 'Error al iniciar sesión';
-      setMsg(error);
+  e.preventDefault();
+  try {
+    const res = await axios.post('http://localhost:4000/api/login', {
+      email,
+      password
+    });
+
+    const { token, rol } = res.data;
+    localStorage.setItem('token', token);
+    localStorage.setItem('rol', rol);
+
+    // Redirigir según rol
+    switch (rol) {
+      case 'Administrador':
+        navigate('/productos');
+        break;
+      case 'Vendedor':
+        navigate('/ventas');
+        break;
+      case 'Consultor':
+        navigate('/reportes');
+        break;
+      default:
+        navigate('/');
     }
-  };
+  } catch (err) {
+    const error = err.response?.data?.error || 'Error al iniciar sesión';
+    setMsg(error);
+  }
+};
+
 
   return (
     <form onSubmit={handleLogin} className="login-form">
@@ -44,6 +61,13 @@ export default function LoginForm() {
       />
       <button type="submit">Entrar</button>
       {msg && <p className="error">{msg}</p>}
+
+
+    <p style={{ textAlign: "center" }}>
+        <a href="#" onClick={() => alert("Funcionalidad pendiente 😅")}> ¿Olvidaste tu contraseña?</a>
+    </p>
+
     </form>
+    
   );
 }
