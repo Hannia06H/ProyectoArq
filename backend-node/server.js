@@ -7,6 +7,7 @@ const cors = require("cors");
 // const bcrypt = require("bcryptjs"); // Ya comentada/eliminada
 require("dotenv").config();
 
+const usuariosRoutes = require("./routes/usuarios");
 // Importar las rutas de ventas
 const salesRoutes = require("./routes/sales"); 
 const app = express();
@@ -22,6 +23,12 @@ app.use(express.json()); // Middleware para parsear el cuerpo de las peticiones 
 // Montar las rutas de la API
 app.use("/api", authRoutes); 
 app.use("/api/ventas", salesRoutes); 
+
+//usuarios 
+
+app.use("/api/usuarios", usuariosRoutes);
+
+
 
 // Puedes eliminar esta línea si no la usas en server.js directamente.
 // const User = require("./models/User");
