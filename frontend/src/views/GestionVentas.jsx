@@ -145,7 +145,7 @@ export default function GestionVentas() {
 
   // Puedes quitar esta condición temporalmente para depurar la UI sin el rol
   if (rol !== "Vendedor" && rol !== "Administrador") {
-    return <p style={{ padding: "2rem" }}>Acceso restringido. Solo los vendedores, administradores y consultores pueden acceder a esta sección.</p>;
+    return <p style={{ padding: "2rem" }}>Acceso restringido. Solo los administradores y vendedores pueden acceder a esta sección.</p>;
   }
 
   // Estilos generales para inputs y botones

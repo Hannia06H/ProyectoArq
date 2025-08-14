@@ -107,7 +107,7 @@ export default function GestionProductos() {
   const categorias = [
     "Electrónicos", "Ropa", "Calzado", "Accesorios", "Hogar", "Libros",
     "Papelería", "Oficina", "Deportes", "Belleza", "Juguetes", "Muebles",
-    "Alimentos", "Jardín", "Bricolaje", "Arte"
+    "Alimentos", "Jardín", "Bricolaje", "Arte","Otro",
   ];
 
   return (
@@ -165,7 +165,9 @@ export default function GestionProductos() {
             }}
           >
             <option value="">Selecciona categoría</option>
-            {["Electrónica", "Ropa", "Hogar"].map(cat => (
+            {["Electrónica", "Ropa", "Calzado", "Accesorios", "Hogar", "Libros",
+    "Papelería", "Oficina", "Deportes", "Belleza", "Juguetes", "Muebles",
+    "Alimentos", "Jardín", "Bricolaje", "Arte","Otro",].map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
@@ -196,6 +198,7 @@ export default function GestionProductos() {
               style={{ flex: 1, padding: "8px" }}
             />
             <select
+            name="filtroCategoria" 
               value={filtroCategoria}
               onChange={(e) => setFiltroCategoria(e.target.value)}
               style={{
@@ -207,7 +210,9 @@ export default function GestionProductos() {
               }}
             >
               <option value="">Todas las categorías</option>
-              {["Electrónica", "Ropa", "Hogar"].map(cat => (
+              {["Electrónica", "Ropa", "Calzado", "Accesorios", "Hogar", "Libros",
+    "Papelería", "Oficina", "Deportes", "Belleza", "Juguetes", "Muebles",
+    "Alimentos", "Jardín", "Bricolaje", "Arte","Otro",].map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
@@ -233,35 +238,48 @@ export default function GestionProductos() {
                 </tr>
               </thead>
               <tbody>
-                {productos
-                  .filter(p =>
-                    p.nombre.toLowerCase().includes(filtro.toLowerCase()) &&
-                    (filtroCategoria === "" || p.categoria === filtroCategoria)
-                  )
-                  .map(p => (
-                    <tr key={p.id} style={{ borderBottom: "1px solid #ddd" }}>
-                      <td style={tableCellStyle}>{p.nombre}</td>
-                      <td style={tableCellStyle}>{p.descripcion}</td>
-                      <td style={tableCellStyle}>${p.precio}</td>
-                      <td style={tableCellStyle}>{p.categoria}</td>
-                      <td style={tableCellStyle}>{p.stock}</td>
-                      <td style={tableCellStyle}>
-                        <button
-                          onClick={() => handleEditar(p)}
-                          style={actionButtonStyle("#4CAF50")}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => eliminarProducto(p.id)}
-                          style={actionButtonStyle("#f44336")}
-                        >
-                          Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
+  {productos
+    .filter(p =>
+      p.nombre.toLowerCase().includes(filtro.toLowerCase()) &&
+      (filtroCategoria === "" || p.categoria === filtroCategoria)
+    )
+    .length === 0 ? ( // Si no hay productos después del filtrado
+      <tr>
+        <td colSpan="6" style={{ textAlign: "center", padding: "2rem", color: "#666" }}>
+          No hay productos disponibles {filtro || filtroCategoria ? "con los filtros aplicados" : ""}.
+        </td>
+      </tr>
+    ) : (
+      productos
+        .filter(p =>
+          p.nombre.toLowerCase().includes(filtro.toLowerCase()) &&
+          (filtroCategoria === "" || p.categoria === filtroCategoria)
+        )
+        .map(p => (
+          <tr key={p.id} style={{ borderBottom: "1px solid #ddd" }}>
+            <td style={tableCellStyle}>{p.nombre}</td>
+            <td style={tableCellStyle}>{p.descripcion}</td>
+            <td style={tableCellStyle}>${p.precio}</td>
+            <td style={tableCellStyle}>{p.categoria}</td>
+            <td style={tableCellStyle}>{p.stock}</td>
+            <td style={tableCellStyle}>
+              <button
+                onClick={() => handleEditar(p)}
+                style={actionButtonStyle("#4CAF50")}
+              >
+                Editar
+              </button>
+              <button
+                onClick={() => eliminarProducto(p.id)}
+                style={actionButtonStyle("#f44336")}
+              >
+                Eliminar
+              </button>
+            </td>
+          </tr>
+        ))
+    )}
+</tbody>
             </table>
           </div>
         </div>
