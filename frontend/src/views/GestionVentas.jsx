@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import Navbar from '../components/NavBar';
 
 // URLs de los backends
 const NODE_API_URL = "http://localhost:4000/api"; // Para Ventas (Node.js)
@@ -143,7 +144,7 @@ export default function GestionVentas() {
   };
 
   // Puedes quitar esta condición temporalmente para depurar la UI sin el rol
-  if (rol !== "Vendedor" && rol !== "Administrador" && rol !== "Consultor") {
+  if (rol !== "Vendedor" && rol !== "Administrador") {
     return <p style={{ padding: "2rem" }}>Acceso restringido. Solo los vendedores, administradores y consultores pueden acceder a esta sección.</p>;
   }
 
@@ -211,14 +212,29 @@ export default function GestionVentas() {
     marginBottom: '2rem', // Espacio entre secciones
   };
 
+return (
+  <div>
+    {/* Navbar */}
+    <Navbar />
 
-  return (
-    <div style={{ display: "flex", padding: "2rem", gap: "2rem", maxWidth: "1200px", margin: "0 auto", fontFamily: "Arial, sans-serif" }}>
-
+    {/* Contenido principal */}
+    <div
+      style={{
+        display: "flex",
+        padding: "2rem",
+        gap: "2rem",
+        maxWidth: "1200px",
+        margin: "0 auto",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
       {/* FORMULARIO DE REGISTRO DE VENTA */}
       <div style={{ ...containerSectionStyle, width: "40%" }}>
         <h2>Registrar Nueva Venta</h2>
-        <form onSubmit={handleRegistrarVenta} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <form
+          onSubmit={handleRegistrarVenta}
+          style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+        >
           <input
             type="text"
             name="clienteNombre"
@@ -239,21 +255,30 @@ export default function GestionVentas() {
           <select
             value=""
             onChange={handleProductoSeleccionado}
-            style={inputStyle} // Aplicar estilo inputStyle también al select
+            style={inputStyle}
           >
             <option value="">-- Seleccionar Producto --</option>
-            {productosDisponibles.map(p => (
+            {productosDisponibles.map((p) => (
               <option key={p.id} value={p.id} disabled={p.stock <= 0}>
                 {p.nombre} (${p.precio.toFixed(2)}) (Stock: {p.stock})
               </option>
             ))}
           </select>
 
-          <h3 style={{ marginTop: "15px", marginBottom: "10px", color: '#495057' }}>Productos en la Venta:</h3>
+          <h3 style={{ marginTop: "15px", marginBottom: "10px", color: "#495057" }}>
+            Productos en la Venta:
+          </h3>
           {formularioVenta.productosSeleccionados.length === 0 ? (
-            <p style={{ color: '#6c757d' }}>No hay productos seleccionados.</p>
+            <p style={{ color: "#6c757d" }}>No hay productos seleccionados.</p>
           ) : (
-            <div style={{ maxHeight: "200px", overflowY: "auto", border: "1px solid #dee2e6", borderRadius: "5px" }}>
+            <div
+              style={{
+                maxHeight: "200px",
+                overflowY: "auto",
+                border: "1px solid #dee2e6",
+                borderRadius: "5px",
+              }}
+            >
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
@@ -264,23 +289,38 @@ export default function GestionVentas() {
                   </tr>
                 </thead>
                 <tbody>
-                  {formularioVenta.productosSeleccionados.map(item => (
+                  {formularioVenta.productosSeleccionados.map((item) => (
                     <tr key={item.id} style={tableRowStyle}>
                       <td style={tableCellStyle}>{item.nombre}</td>
                       <td style={tableCellStyle}>
                         <input
                           type="number"
                           min="1"
-                          max={productosDisponibles.find(p => p.id === item.id)?.stock || item.cantidad}
+                          max={
+                            productosDisponibles.find((p) => p.id === item.id)?.stock ||
+                            item.cantidad
+                          }
                           value={item.cantidad}
                           onChange={(e) => handleCantidadChange(e, item.id)}
-                          style={{ ...inputStyle, width: "60px", marginBottom: '0', padding: '6px' }}
+                          style={{
+                            ...inputStyle,
+                            width: "60px",
+                            marginBottom: "0",
+                            padding: "6px",
+                          }}
                         />
                       </td>
-                      <td style={tableCellStyle}>${(item.precio * item.cantidad).toFixed(2)}</td>
                       <td style={tableCellStyle}>
-                        <button type="button" onClick={() => handleRemoveProducto(item.id)}
-                          style={dangerButton}>Eliminar</button>
+                        ${(item.precio * item.cantidad).toFixed(2)}
+                      </td>
+                      <td style={tableCellStyle}>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveProducto(item.id)}
+                          style={dangerButton}
+                        >
+                          Eliminar
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -289,7 +329,23 @@ export default function GestionVentas() {
             </div>
           )}
 
-          <h3 style={{ textAlign: "right", marginTop: "15px", color: '#343a40' }}>Total: <span style={{ fontSize: "1.6rem", color: "#28a745" }}>${formularioVenta.total.toFixed(2)}</span></h3>
+          <h3
+            style={{
+              textAlign: "right",
+              marginTop: "15px",
+              color: "#343a40",
+            }}
+          >
+            Total:{" "}
+            <span
+              style={{
+                fontSize: "1.6rem",
+                color: "#28a745",
+              }}
+            >
+              ${formularioVenta.total.toFixed(2)}
+            </span>
+          </h3>
 
           <button type="submit" style={primaryButton}>
             Registrar Venta
@@ -300,7 +356,14 @@ export default function GestionVentas() {
       {/* TABLA DE VENTAS CON SCROLL */}
       <div style={{ ...containerSectionStyle, width: "60%" }}>
         <h2>Mis Ventas Registradas</h2>
-        <div style={{ marginBottom: "15px", display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div
+          style={{
+            marginBottom: "15px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+          }}
+        >
           <input
             type="text"
             name="cliente"
@@ -316,7 +379,7 @@ export default function GestionVentas() {
               placeholder="Fecha Inicio"
               value={filtroFechaInicio}
               onChange={handleFiltroChange}
-              style={{ ...inputStyle, width: "50%", marginBottom: '0' }}
+              style={{ ...inputStyle, width: "50%", marginBottom: "0" }}
             />
             <input
               type="date"
@@ -324,19 +387,35 @@ export default function GestionVentas() {
               placeholder="Fecha Fin"
               value={filtroFechaFin}
               onChange={handleFiltroChange}
-              style={{ ...inputStyle, width: "50%", marginBottom: '0' }}
+              style={{ ...inputStyle, width: "50%", marginBottom: "0" }}
             />
           </div>
-          <button onClick={obtenerVentas} style={{ ...secondaryButton, width: "100%", marginTop: '10px' }}>
+          <button
+            onClick={obtenerVentas}
+            style={{
+              ...secondaryButton,
+              width: "100%",
+              marginTop: "10px",
+            }}
+          >
             Aplicar Filtros
           </button>
         </div>
 
-
         {ventas.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#6c757d" }}>No hay ventas registradas o no se encontraron resultados con los filtros aplicados.</p>
+          <p style={{ textAlign: "center", color: "#6c757d" }}>
+            No hay ventas registradas o no se encontraron resultados con los
+            filtros aplicados.
+          </p>
         ) : (
-          <div style={{ maxHeight: "500px", overflowY: "auto", border: "1px solid #dee2e6", borderRadius: "5px" }}>
+          <div
+            style={{
+              maxHeight: "500px",
+              overflowY: "auto",
+              border: "1px solid #dee2e6",
+              borderRadius: "5px",
+            }}
+          >
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
@@ -349,21 +428,48 @@ export default function GestionVentas() {
                 </tr>
               </thead>
               <tbody>
-                {ventas.map(venta => (
+                {ventas.map((venta) => (
                   <tr key={venta._id} style={tableRowStyle}>
-                    <td style={{ ...tableCellStyle, wordBreak: 'break-all' }}>{venta._id}</td> {/* wordBreak para IDs largos */}
-                    <td style={tableCellStyle}>{new Date(venta.fecha).toLocaleDateString()}</td>
+                    <td
+                      style={{
+                        ...tableCellStyle,
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {venta._id}
+                    </td>
+                    <td style={tableCellStyle}>
+                      {new Date(venta.fecha).toLocaleDateString()}
+                    </td>
                     <td style={tableCellStyle}>{venta.clienteNombre}</td>
                     <td style={tableCellStyle}>
-                      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                      <ul
+                        style={{
+                          listStyle: "none",
+                          padding: 0,
+                          margin: 0,
+                        }}
+                      >
                         {venta.productosSeleccionados.map((prod, index) => (
-                          <li key={index}>{prod.nombre} (x{prod.cantidad})</li>
+                          <li key={index}>
+                            {prod.nombre} (x{prod.cantidad})
+                          </li>
                         ))}
                       </ul>
                     </td>
-                    <td style={tableCellStyle}>${venta.total.toFixed(2)}</td>
                     <td style={tableCellStyle}>
-                      <button style={{ ...buttonStyle, backgroundColor: '#17a2b8', color: 'white' }}>Ver Detalles</button>
+                      ${venta.total.toFixed(2)}
+                    </td>
+                    <td style={tableCellStyle}>
+                      <button
+                        style={{
+                          ...buttonStyle,
+                          backgroundColor: "#17a2b8",
+                          color: "white",
+                        }}
+                      >
+                        Ver Detalles
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -373,5 +479,8 @@ export default function GestionVentas() {
         )}
       </div>
     </div>
-  );
+  </div> // 👈 cierro el contenedor principal aquí
+);
+
+  
 }

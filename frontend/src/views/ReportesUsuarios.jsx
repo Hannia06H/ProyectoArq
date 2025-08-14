@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
+import Navbar from '../components/NavBar';
 
 function ReportesUsuarios() {
   const columns = [
@@ -18,6 +19,7 @@ function ReportesUsuarios() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const itemsPerPage = 10;
+  const rol = localStorage.getItem('rol');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -188,220 +190,227 @@ function ReportesUsuarios() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  if (rol !== "Consultor" && rol !== "Administrador") {
+    return <p style={{ padding: "2rem" }}>Acceso restringido. Solo los administradores y consultores pueden acceder a esta sección.</p>;
+  }
 
+return (
+  <div className="min-h-screen bg-gray-50 flex flex-col">
+    {/* Navbar */}
+    <Navbar />
 
-{/* Header */}
-<div className="mb-8 bg-white rounded-xl shadow-lg p-6">
-  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div>
-      <h1 className="text-3xl font-extrabold text-gray-900 flex items-center">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="28"
-          height="28"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="mr-3 text-blue-700"
-        >
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-        </svg>
-        Reporte de Usuarios
-      </h1>
-      <p className="text-gray-600 mt-1 text-lg font-medium">Gestión y análisis de usuarios registrados</p>
-    </div>
+    {/* Contenido principal */}
+    <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-      <div className="relative flex-grow">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-gray-400"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-        </div>
-        <input
-          type="text"
-          placeholder="Buscar usuarios..."
-          className="pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500 focus:border-blue-600 w-full transition-shadow duration-300"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-      </div>
-
-      <button
-        onClick={exportToExcelLocal}
-        className="flex items-center justify-center bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-0.5 active:scale-95"
-        title="Exportar a Excel"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="mr-2 animate-pulse"
-        >
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="7 10 12 15 17 10" />
-          <line x1="12" y1="15" x2="12" y2="3" />
-        </svg>
-        Exportar
-      </button>
-    </div>
-  </div>
-</div>
-
-{/* Table */}
-<div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-gray-200">
-  <div className="overflow-x-auto">
-    <table className="min-w-full divide-y divide-gray-300">
-      <thead className="bg-blue-50">
-        <tr>
-          {columns.map((column) => (
-            <th
-              key={column.key}
-              scope="col"
-              className="px-8 py-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wide cursor-pointer select-none hover:bg-blue-100 transition-colors"
-              onClick={() => requestSort(column.key)}
-              style={{ width: column.width }}
-            >
-              <div className="flex items-center select-none">
-                {column.label}
-                {sortConfig.key === column.key && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="ml-2 text-blue-700"
-                  >
-                    {sortConfig.direction === 'ascending' ? (
-                      <path d="M12 19V5M5 12l7-7 7 7" />
-                    ) : (
-                      <path d="M12 5v14M19 12l-7 7-7-7" />
-                    )}
-                  </svg>
-                )}
-              </div>
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-200">
-        {currentItems.map((usuario, index) => (
-          <tr
-            key={usuario._id}
-            className={`transition-colors duration-300 cursor-pointer ${
-              index % 2 === 0 ? 'bg-white' : 'bg-blue-50'
-            } hover:bg-blue-100`}
-            title="Click para ver más detalles"
-          >
-            {columns.map((column) => (
-              <td
-                key={`${usuario._id}-${column.key}`}
-                className="px-8 py-5 whitespace-nowrap text-sm text-gray-900 truncate max-w-xs"
-                title={usuario[column.key]}
+      {/* Header */}
+      <div className="mb-8 bg-white rounded-xl shadow-lg p-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mr-3 text-blue-700"
               >
-                {column.key === 'rol' ? (
-                  <span
-                    className={`px-3 py-1 text-xs font-semibold rounded-full select-none ${
-                      usuario.rol === 'admin'
-                        ? 'bg-purple-200 text-purple-900'
-                        : 'bg-green-200 text-green-900'
-                    }`}
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              Reporte de Usuarios
+            </h1>
+            <p className="text-gray-600 mt-1 text-lg font-medium">
+              Gestión y análisis de usuarios registrados
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <div className="relative flex-grow">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-gray-400"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar usuarios..."
+                className="pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500 focus:border-blue-600 w-full transition-shadow duration-300"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+
+            <button
+              onClick={exportToExcelLocal}
+              className="flex items-center justify-center bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-0.5 active:scale-95"
+              title="Exportar a Excel"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mr-2 animate-pulse"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Exportar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-gray-200">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-300">
+            <thead className="bg-blue-50">
+              <tr>
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    scope="col"
+                    className="px-8 py-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wide cursor-pointer select-none hover:bg-blue-100 transition-colors"
+                    onClick={() => requestSort(column.key)}
+                    style={{ width: column.width }}
                   >
-                    {usuario.rol}
-                  </span>
-                ) : (
-                  usuario[column.key]
-                )}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
+                    <div className="flex items-center select-none">
+                      {column.label}
+                      {sortConfig.key === column.key && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="ml-2 text-blue-700"
+                        >
+                          {sortConfig.direction === "ascending" ? (
+                            <path d="M12 19V5M5 12l7-7 7 7" />
+                          ) : (
+                            <path d="M12 5v14M19 12l-7 7-7-7" />
+                          )}
+                        </svg>
+                      )}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {currentItems.map((usuario, index) => (
+                <tr
+                  key={usuario._id}
+                  className={`transition-colors duration-300 cursor-pointer ${
+                    index % 2 === 0 ? "bg-white" : "bg-blue-50"
+                  } hover:bg-blue-100`}
+                  title="Click para ver más detalles"
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={`${usuario._id}-${column.key}`}
+                      className="px-8 py-5 whitespace-nowrap text-sm text-gray-900 truncate max-w-xs"
+                      title={usuario[column.key]}
+                    >
+                      {column.key === "rol" ? (
+                        <span
+                          className={`px-3 py-1 text-xs font-semibold rounded-full select-none ${
+                            usuario.rol === "admin"
+                              ? "bg-purple-200 text-purple-900"
+                              : "bg-green-200 text-green-900"
+                          }`}
+                        >
+                          {usuario.rol}
+                        </span>
+                      ) : (
+                        usuario[column.key]
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-  {/* Pagination */}
-  <div className="bg-white px-6 py-4 flex items-center justify-between border-t border-gray-200 select-none">
-    <div className="flex-1 flex justify-between sm:hidden">
-      <button
-        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-        disabled={currentPage === 1}
-        className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-      >
-        Anterior
-      </button>
-      <button
-        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-        disabled={currentPage === totalPages}
-        className="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-      >
-        Siguiente
-      </button>
-    </div>
-    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-      <div>
-        <p className="text-sm text-gray-700">
-          Mostrando{' '}
-          <span className="font-semibold">{indexOfFirstItem + 1}</span> a{' '}
-          <span className="font-semibold">
-            {Math.min(indexOfLastItem, filteredData.length)}
-          </span>{' '}
-          de <span className="font-semibold">{filteredData.length}</span>{' '}
-          resultados
-        </p>
-      </div>
-      <div>
-        <nav
-          className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-          aria-label="Pagination"
-        >
-          {/* Botones de paginación */}
-          {/* (se mantiene igual, con estilos suavizados) */}
-          {/* ... */}
-        </nav>
+        {/* Pagination */}
+        <div className="bg-white px-6 py-4 flex items-center justify-between border-t border-gray-200 select-none">
+          <div className="flex-1 flex justify-between sm:hidden">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+              disabled={currentPage === 1}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              Siguiente
+            </button>
+          </div>
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Mostrando{" "}
+                <span className="font-semibold">{indexOfFirstItem + 1}</span> a{" "}
+                <span className="font-semibold">
+                  {Math.min(indexOfLastItem, filteredData.length)}
+                </span>{" "}
+                de <span className="font-semibold">{filteredData.length}</span>{" "}
+                resultados
+              </p>
+            </div>
+            <div>
+              <nav
+                className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                aria-label="Pagination"
+              >
+                {/* Botones de paginación */}
+              </nav>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-</div>
+);
 
-      </div>
-    </div>
-  );
 }
 
 export default ReportesUsuarios;

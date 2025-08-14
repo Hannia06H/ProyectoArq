@@ -21,6 +21,7 @@ function ReportesProductos() {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const rol = localStorage.getItem('rol');
   
   // Estados para filtros
   const [filtros, setFiltros] = useState({
@@ -248,11 +249,14 @@ function ReportesProductos() {
       </div>
     );
   }
+  if (rol !== "Consultor" && rol !== "Administrador") {
+    return <p style={{ padding: "2rem" }}>Acceso restringido. Solo los administradores y consultores pueden acceder a esta sección.</p>;
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">📊 Reporte de Productos</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Reporte de Productos</h1>
         <p className="text-gray-600">Visualización y exportación de los productos registrados</p>
       </div>
 

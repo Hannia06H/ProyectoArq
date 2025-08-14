@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import Navbar from '../components/NavBar';
 
 const NODE_API_URL = "http://localhost:4000/api/usuarios"; // URL base de usuarios
 
@@ -96,31 +97,103 @@ export default function GestionUsuarios() {
     return <p style={{ padding: "2rem" }}>Acceso restringido. Solo los administradores pueden acceder a la gestión de usuarios.</p>;
   }
 
-  return (
-    <div style={{ display: "flex", padding: "2rem", gap: "2rem", maxWidth: "1200px", margin: "0 auto", fontFamily: "Arial, sans-serif" }}>
+ return (
+  <div>
+    {/* Navbar */}
+    <Navbar />
 
+    {/* Contenido principal */}
+    <div style={{ 
+      display: "flex", 
+      padding: "2rem", 
+      gap: "2rem", 
+      maxWidth: "1200px", 
+      margin: "0 auto", 
+      fontFamily: "Arial, sans-serif"
+    }}>
       {/* Formulario */}
-      <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '1.5rem', width: "40%", background: 'white' }}>
+      <div style={{ 
+        border: '1px solid #ddd', 
+        borderRadius: '8px', 
+        padding: '1.5rem', 
+        width: "40%", 
+        background: 'white',
+        height: "fit-content"
+      }}>
         <h2>{editandoId ? "Editar Usuario" : "Registrar Usuario"}</h2>
         <form onSubmit={registrarOEditarUsuario} style={{ display: "flex", flexDirection: "column" }}>
-          <input type="text" name="nombre" placeholder="Nombre" value={formUsuario.nombre} onChange={handleChangeForm} style={inputStyle} required />
-          <input type="email" name="email" placeholder="Email" value={formUsuario.email} onChange={handleChangeForm} style={inputStyle} required />
-          <select name="rol" value={formUsuario.rol} onChange={handleChangeForm} style={inputStyle}>
+          <input 
+            type="text" 
+            name="nombre" 
+            placeholder="Nombre" 
+            value={formUsuario.nombre} 
+            onChange={handleChangeForm} 
+            style={inputStyle} 
+            required 
+          />
+          <input 
+            type="email" 
+            name="email" 
+            placeholder="Email" 
+            value={formUsuario.email} 
+            onChange={handleChangeForm} 
+            style={inputStyle} 
+            required 
+          />
+          <select 
+            name="rol" 
+            value={formUsuario.rol} 
+            onChange={handleChangeForm} 
+            style={inputStyle}
+          >
             <option value="Administrador">Administrador</option>
             <option value="Vendedor">Vendedor</option>
             <option value="Consultor">Consultor</option>
           </select>
-          <input type="password" name="password" placeholder="Contraseña" value={formUsuario.password} onChange={handleChangeForm} style={inputStyle} required={!editandoId} />
-          <button type="submit" style={primaryButton}>{editandoId ? "Actualizar" : "Registrar"}</button>
+          <input 
+            type="password" 
+            name="password" 
+            placeholder="Contraseña" 
+            value={formUsuario.password} 
+            onChange={handleChangeForm} 
+            style={inputStyle} 
+            required={!editandoId} 
+          />
+          <button 
+            type="submit" 
+            style={primaryButton}
+          >
+            {editandoId ? "Actualizar" : "Registrar"}
+          </button>
         </form>
       </div>
 
       {/* Tabla */}
-      <div style={{ border: '1px solid #ddd', borderRadius: '8px', padding: '1.5rem', width: "60%", background: 'white' }}>
+      <div style={{ 
+        border: '1px solid #ddd', 
+        borderRadius: '8px', 
+        padding: '1.5rem', 
+        width: "60%", 
+        background: 'white'
+      }}>
         <h2>Usuarios Registrados</h2>
-        <div style={{ marginBottom: "10px", display: "flex", gap: "10px" }}>
-          <input type="text" placeholder="Filtrar por nombre" value={filtroNombre} onChange={(e) => setFiltroNombre(e.target.value)} style={inputStyle} />
-          <select value={filtroRol} onChange={(e) => setFiltroRol(e.target.value)} style={inputStyle}>
+        <div style={{ 
+          marginBottom: "10px", 
+          display: "flex", 
+          gap: "10px" 
+        }}>
+          <input 
+            type="text" 
+            placeholder="Filtrar por nombre" 
+            value={filtroNombre} 
+            onChange={(e) => setFiltroNombre(e.target.value)} 
+            style={inputStyle} 
+          />
+          <select 
+            value={filtroRol} 
+            onChange={(e) => setFiltroRol(e.target.value)} 
+            style={inputStyle}
+          >
             <option value="">Todos los roles</option>
             <option value="Administrador">Administrador</option>
             <option value="Vendedor">Vendedor</option>
@@ -129,7 +202,9 @@ export default function GestionUsuarios() {
         </div>
 
         {usuarios.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#6c757d" }}>No hay usuarios registrados.</p>
+          <p style={{ textAlign: "center", color: "#6c757d" }}>
+            No hay usuarios registrados.
+          </p>
         ) : (
           <div style={{ maxHeight: "500px", overflowY: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -148,8 +223,23 @@ export default function GestionUsuarios() {
                     <td style={tableCellStyle}>{u.email}</td>
                     <td style={tableCellStyle}>{u.rol}</td>
                     <td style={tableCellStyle}>
-                      <button onClick={() => editarUsuario(u)} style={{ ...buttonStyle, backgroundColor: '#ffc107', color: 'white', marginRight: '5px' }}>Editar</button>
-                      <button onClick={() => eliminarUsuario(u._id)} style={dangerButton}>Eliminar</button>
+                      <button 
+                        onClick={() => editarUsuario(u)} 
+                        style={{ 
+                          ...buttonStyle, 
+                          backgroundColor: '#ffc107', 
+                          color: 'white', 
+                          marginRight: '5px' 
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button 
+                        onClick={() => eliminarUsuario(u._id)} 
+                        style={dangerButton}
+                      >
+                        Eliminar
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -159,5 +249,6 @@ export default function GestionUsuarios() {
         )}
       </div>
     </div>
-  );
+  </div>
+);
 }

@@ -29,7 +29,7 @@ export default function LoginForm() {
         navigate('/ventas');
         break;
       case 'Consultor':
-        navigate('/reportes');
+        navigate('/reportes/usuarios');
         break;
       default:
         navigate('/');
@@ -64,7 +64,7 @@ export default function LoginForm() {
 
 
     <p style={{ textAlign: "center" }}>
-        <a href="#" onClick={() => alert("Funcionalidad pendiente 😅")}> ¿Olvidaste tu contraseña?</a>
+        <a href="#" onClick={() => alert("Funcionalidad pendiente :)")}> ¿Olvidaste tu contraseña?</a>
     </p>
 
     </form>

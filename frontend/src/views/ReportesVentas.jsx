@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
+import Navbar from "../components/NavBar";
 
 function ReportesVentas() {
   const columns = [
@@ -16,6 +17,7 @@ function ReportesVentas() {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const rol = localStorage.getItem('rol');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,12 +80,23 @@ function ReportesVentas() {
   if (error) return <p style={{ color: 'red', textAlign: 'center', marginTop: '2rem' }}>{error}</p>;
   if (datos.length === 0) return <p style={{ textAlign: 'center', marginTop: '2rem' }}>No hay ventas registradas.</p>;
 
-  return (
-    <div style={{ maxWidth: 1100, margin: '2rem auto', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
+  if (rol !== "Consultor" && rol !== "Administrador") {
+    return <p style={{ padding: "2rem" }}>Acceso restringido. Solo los administradores y consultores pueden acceder a esta sección.</p>;
+  }
+
+return (
+  <div style={{ fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
+    {/* Navbar */}
+    <Navbar />
+
+    {/* Contenido principal */}
+    <div style={{ maxWidth: 1100, margin: '2rem auto', paddingTop: '1rem' }}>
       <h1 style={{ display: 'flex', alignItems: 'center', fontSize: '2rem', marginBottom: '0.3rem' }}>
-        🛒 <span style={{ marginLeft: 10 }}>Informe de ventas</span>
+         <span style={{ marginLeft: 10 }}>Informe de ventas</span>
       </h1>
-      <p style={{ marginBottom: '1.5rem', color: '#555' }}>Visualización y exportación de las ventas registradas.</p>
+      <p style={{ marginBottom: '1.5rem', color: '#555' }}>
+        Visualización y exportación de las ventas registradas.
+      </p>
 
       <button
         onClick={exportToExcelLocal}
@@ -267,7 +280,9 @@ function ReportesVentas() {
         </div>
       )}
     </div>
-  );
+  </div>
+);
+
 }
 
 export default ReportesVentas;
