@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import Navbar from '../components/NavBar';
 
-function ReportesUsuarios() {
+const ReportesUsuarios = () => {
+  // Configuración de columnas
   const columns = [
     { key: '_id', label: 'ID', width: '20%' },
     { key: 'email', label: 'Email', width: '25%' },
@@ -12,15 +13,202 @@ function ReportesUsuarios() {
     { key: 'ultimoAcceso', label: 'Último Acceso', width: '20%' },
   ];
 
+  // Estados
   const [datos, setDatos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const itemsPerPage = 10;
   const rol = localStorage.getItem('rol');
 
+  // Estilos
+  const styles = {
+    container: {
+      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+      backgroundColor: '#f8f9fa',
+      minHeight: '100vh',
+    },
+    content: {
+      maxWidth: '1100px',
+      margin: '0 auto',
+      padding: '20px',
+    },
+    header: {
+      backgroundColor: 'white',
+      borderRadius: '10px',
+      padding: '20px',
+      marginBottom: '20px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    },
+    title: {
+      fontSize: '28px',
+      fontWeight: 'bold',
+      marginBottom: '0.3rem',
+      color: '#40916c',
+      display: 'flex',
+      alignItems: 'center',
+    },
+    subtitle: {
+      color: '#555',
+      marginBottom: '1.5rem',
+      fontSize: '16px',
+    },
+    searchContainer: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '20px',
+      flexWrap: 'wrap',
+      gap: '15px',
+    },
+    searchInput: {
+      flex: '1',
+      minWidth: '250px',
+      padding: '10px 15px 10px 40px',
+      borderRadius: '8px',
+      border: '1px solid #ddd',
+      fontSize: '14px',
+      outline: 'none',
+      transition: 'all 0.3s',
+      backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M15.7%2014.3l-3.8-3.8c.8-1.1%201.2-2.4%201.2-3.8%200-3.3-2.7-6-6-6s-6%202.7-6%206%202.7%206%206%206c1.4%200%202.7-.4%203.8-1.2l3.8%203.8c.2.2.4.3.7.3.3%200%20.5-.1.7-.3.4-.3.4-.7.2-1zM7%2011c-2.2%200-4-1.8-4-4s1.8-4%204-4%204%201.8%204%204-1.8%204-4%204z%22%20fill%3D%22%23555%22%2F%3E%3C%2Fsvg%3E")',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: '15px center',
+      backgroundSize: '16px 16px',
+    },
+    searchInputFocus: {
+      borderColor: '#52b788',
+      boxShadow: '0 0 0 2px rgba(82, 183, 136, 0.2)',
+    },
+    button: {
+      backgroundColor: '#40916c',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '10px 16px',
+      cursor: 'pointer',
+      fontWeight: '600',
+      fontSize: '14px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      transition: 'all 0.3s',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+    },
+    buttonHover: {
+      backgroundColor: '#52b788',
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+    },
+    tableContainer: {
+      backgroundColor: 'white',
+      borderRadius: '10px',
+      overflow: 'hidden',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      marginBottom: '20px',
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+    },
+    tableHeader: {
+      backgroundColor: '#40916c',
+      color: 'white',
+    },
+    tableHeaderCell: {
+      padding: '15px',
+      textAlign: 'left',
+      fontWeight: '600',
+      cursor: 'pointer',
+      userSelect: 'none',
+      transition: 'background-color 0.2s',
+    },
+    tableHeaderCellHover: {
+      backgroundColor: '#52b788',
+    },
+    tableRow: {
+      borderBottom: '1px solid #eee',
+    },
+    tableRowEven: {
+      backgroundColor: '#f7f9f9',
+    },
+    tableRowHover: {
+      backgroundColor: '#d8f3dc',
+    },
+    tableCell: {
+      padding: '12px 15px',
+      maxWidth: '0',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+    pagination: {
+      display: 'flex',
+      justifyContent: 'center',
+      padding: '15px',
+      backgroundColor: 'white',
+      borderTop: '1px solid #eee',
+    },
+    paginationButton: {
+      margin: '0 5px',
+      padding: '8px 12px',
+      borderRadius: '5px',
+      border: '1px solid #ddd',
+      backgroundColor: 'white',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+    },
+    paginationButtonActive: {
+      backgroundColor: '#40916c',
+      color: 'white',
+      borderColor: '#40916c',
+    },
+    paginationButtonDisabled: {
+      opacity: '0.5',
+      cursor: 'not-allowed',
+    },
+    loadingContainer: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '300px',
+      color: '#40916c',
+    },
+    errorContainer: {
+      backgroundColor: '#fff3f3',
+      padding: '20px',
+      borderRadius: '10px',
+      color: '#d32f2f',
+      textAlign: 'center',
+      margin: '20px 0',
+    },
+    emptyContainer: {
+      backgroundColor: 'white',
+      padding: '40px',
+      borderRadius: '10px',
+      textAlign: 'center',
+      color: '#555',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    },
+    roleBadge: {
+      padding: '4px 8px',
+      borderRadius: '12px',
+      fontSize: '12px',
+      fontWeight: '600',
+    },
+    roleAdmin: {
+      backgroundColor: '#e3f2fd',
+      color: '#1976d2',
+    },
+    roleUser: {
+      backgroundColor: '#e8f5e9',
+      color: '#2e7d32',
+    },
+  };
+
+  // Obtener datos de la API
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -50,23 +238,24 @@ function ReportesUsuarios() {
     fetchData();
   }, []);
 
+  // Ordenar datos
   const requestSort = (key) => {
-    let direction = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
     }
     setSortConfig({ key, direction });
   };
 
-  const sortedData = React.useMemo(() => {
+  const sortedData = useMemo(() => {
     let sortableData = [...datos];
     if (sortConfig.key) {
       sortableData.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
+          return sortConfig.direction === 'asc' ? -1 : 1;
         }
         if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
+          return sortConfig.direction === 'asc' ? 1 : -1;
         }
         return 0;
       });
@@ -74,6 +263,7 @@ function ReportesUsuarios() {
     return sortableData;
   }, [datos, sortConfig]);
 
+  // Filtrar datos
   const filteredData = sortedData.filter((item) => {
     return (
       item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -83,7 +273,8 @@ function ReportesUsuarios() {
     );
   });
 
-  const exportToExcelLocal = () => {
+  // Exportar a Excel
+  const exportToExcel = () => {
     const exportData = filteredData.map(({ _id, email, rol, createdAt, ultimoAcceso }) => ({
       ID: _id,
       Email: email,
@@ -96,66 +287,123 @@ function ReportesUsuarios() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Usuarios');
 
+    // Estilos para Excel
+    const headerStyle = {
+      fill: { fgColor: { rgb: "40916C" } },
+      font: { color: { rgb: "FFFFFF" }, bold: true },
+    };
+
+    // Aplicar estilos a los encabezados
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_col(C) + "1";
+      if (!worksheet[cellAddress]) continue;
+      worksheet[cellAddress].s = headerStyle;
+    }
+
     XLSX.writeFile(workbook, `reporte_usuarios_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
+  // Paginación
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
-  if (loading) {
+  // Generar números de página para la paginación
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      const half = Math.floor(maxVisiblePages / 2);
+      let start = currentPage - half;
+      let end = currentPage + half;
+
+      if (start < 1) {
+        start = 1;
+        end = maxVisiblePages;
+      } else if (end > totalPages) {
+        end = totalPages;
+        start = totalPages - maxVisiblePages + 1;
+      }
+
+      for (let i = start; i <= end; i++) {
+        pageNumbers.push(i);
+      }
+    }
+
+    return pageNumbers;
+  };
+
+  // Estados de hover
+  const [hoverStates, setHoverStates] = useState({
+    exportButton: false,
+    searchInput: false,
+  });
+
+  // Verificar acceso
+  if (rol !== "Consultor" && rol !== "Administrador") {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-white">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="64"
-          height="64"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="animate-spin text-blue-600"
-        >
-          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-        </svg>
-        <span className="mt-4 text-lg font-medium text-gray-700">Cargando usuarios...</span>
+      <div style={{ padding: "2rem", textAlign: "center", color: "#d32f2f" }}>
+        Acceso restringido. Solo los administradores y consultores pueden acceder a esta sección.
       </div>
     );
   }
 
-  if (error) {
+  // Mostrar estados de carga, error o sin datos
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-red-50 to-white">
-        <div className="max-w-md p-6 bg-white rounded-xl shadow-md">
-          <div className="flex items-center space-x-3">
+      <div style={styles.container}>
+        <Navbar />
+        <div style={styles.content}>
+          <div style={styles.loadingContainer}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
+              width="64"
+              height="64"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-red-500"
+              style={{ animation: 'spin 1s linear infinite' }}
             >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
             </svg>
-            <h3 className="text-xl font-bold text-gray-800">Error</h3>
+            <p style={{ marginTop: '20px', fontSize: '18px' }}>Cargando usuarios...</p>
           </div>
-          <p className="mt-3 text-gray-600">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Reintentar
-          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={styles.container}>
+        <Navbar />
+        <div style={styles.content}>
+          <div style={styles.errorContainer}>
+            <h3 style={{ marginBottom: '10px' }}>Error al cargar los datos</h3>
+            <p style={{ marginBottom: '20px' }}>{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                ...styles.button,
+                backgroundColor: '#d32f2f',
+                ...(hoverStates.retryButton && { backgroundColor: '#f44336' }),
+              }}
+              onMouseEnter={() => setHoverStates({ ...hoverStates, retryButton: true })}
+              onMouseLeave={() => setHoverStates({ ...hoverStates, retryButton: false })}
+            >
+              Reintentar
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -163,195 +411,162 @@ function ReportesUsuarios() {
 
   if (datos.length === 0) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-yellow-50 to-white">
-        <div className="max-w-md p-6 bg-white rounded-xl shadow-md">
-          <div className="flex items-center space-x-3">
+      <div style={styles.container}>
+        <Navbar />
+        <div style={styles.content}>
+          <div style={styles.emptyContainer}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
+              width="48"
+              height="48"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="currentColor"
+              stroke="#40916c"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-yellow-500"
             >
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            <h3 className="text-xl font-bold text-gray-800">Sin datos</h3>
+            <h3 style={{ margin: '20px 0 10px', fontSize: '20px' }}>No hay usuarios registrados</h3>
+            <p>No se encontraron usuarios en el sistema.</p>
           </div>
-          <p className="mt-3 text-gray-600">No hay usuarios registrados en el sistema.</p>
         </div>
       </div>
     );
   }
 
-  if (rol !== "Consultor" && rol !== "Administrador") {
-    return <p style={{ padding: "2rem" }}>Acceso restringido. Solo los administradores y consultores pueden acceder a esta sección.</p>;
-  }
-
-return (
-  <div className="min-h-screen bg-gray-50 flex flex-col">
-    {/* Navbar */}
-    <Navbar />
-
-    {/* Contenido principal */}
-    <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-      {/* Header */}
-      <div className="mb-8 bg-white rounded-xl shadow-lg p-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-3 text-blue-700"
-              >
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              Reporte de Usuarios
-            </h1>
-            <p className="text-gray-600 mt-1 text-lg font-medium">
-              Gestión y análisis de usuarios registrados
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <div className="relative flex-grow">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+  return (
+    <div style={styles.container}>
+      <Navbar />
+      <div style={styles.content}>
+        {/* Encabezado */}
+        <div style={styles.header}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <div>
+              <h1 style={styles.title}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
+                  width="28"
+                  height="28"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-gray-400"
+                  style={{ marginRight: '10px' }}
                 >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Buscar usuarios..."
-                className="pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-500 focus:border-blue-600 w-full transition-shadow duration-300"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
+                Reporte de Usuarios
+              </h1>
+              <p style={styles.subtitle}>Gestión y análisis de usuarios registrados en el sistema</p>
             </div>
+          </div>
+
+          {/* Barra de búsqueda y acciones */}
+          <div style={styles.searchContainer}>
+            <input
+              type="text"
+              placeholder="Buscar por email, rol o fecha..."
+              style={{
+                ...styles.searchInput,
+                ...(hoverStates.searchInput && styles.searchInputFocus),
+              }}
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              onFocus={() => setHoverStates({ ...hoverStates, searchInput: true })}
+              onBlur={() => setHoverStates({ ...hoverStates, searchInput: false })}
+            />
 
             <button
-              onClick={exportToExcelLocal}
-              className="flex items-center justify-center bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-0.5 active:scale-95"
+              onClick={exportToExcel}
+              style={{
+                ...styles.button,
+                ...(hoverStates.exportButton && styles.buttonHover),
+              }}
+              onMouseEnter={() => setHoverStates({ ...hoverStates, exportButton: true })}
+              onMouseLeave={() => setHoverStates({ ...hoverStates, exportButton: false })}
               title="Exportar a Excel"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="22"
-                height="22"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="mr-2 animate-pulse"
               >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
-              Exportar
+              Exportar a Excel
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Table */}
-      <div className="bg-white shadow-lg rounded-2xl overflow-hidden border border-gray-200">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-300">
-            <thead className="bg-blue-50">
+        {/* Tabla de datos */}
+        <div style={styles.tableContainer}>
+          <table style={styles.table}>
+            <thead style={styles.tableHeader}>
               <tr>
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    scope="col"
-                    className="px-8 py-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wide cursor-pointer select-none hover:bg-blue-100 transition-colors"
+                    style={{
+                      ...styles.tableHeaderCell,
+                      ...(hoverStates[`header-${column.key}`] && styles.tableHeaderCellHover),
+                    }}
+                    onMouseEnter={() => setHoverStates({ ...hoverStates, [`header-${column.key}`]: true })}
+                    onMouseLeave={() => setHoverStates({ ...hoverStates, [`header-${column.key}`]: false })}
                     onClick={() => requestSort(column.key)}
-                    style={{ width: column.width }}
                   >
-                    <div className="flex items-center select-none">
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
                       {column.label}
                       {sortConfig.key === column.key && (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="ml-2 text-blue-700"
-                        >
-                          {sortConfig.direction === "ascending" ? (
-                            <path d="M12 19V5M5 12l7-7 7 7" />
-                          ) : (
-                            <path d="M12 5v14M19 12l-7 7-7-7" />
-                          )}
-                        </svg>
+                        <span style={{ marginLeft: '5px' }}>
+                          {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                        </span>
                       )}
                     </div>
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody>
               {currentItems.map((usuario, index) => (
                 <tr
                   key={usuario._id}
-                  className={`transition-colors duration-300 cursor-pointer ${
-                    index % 2 === 0 ? "bg-white" : "bg-blue-50"
-                  } hover:bg-blue-100`}
-                  title="Click para ver más detalles"
+                  style={{
+                    ...styles.tableRow,
+                    ...(index % 2 === 0 && styles.tableRowEven),
+                    ...(hoverStates[`row-${usuario._id}`] && styles.tableRowHover),
+                  }}
+                  onMouseEnter={() => setHoverStates({ ...hoverStates, [`row-${usuario._id}`]: true })}
+                  onMouseLeave={() => setHoverStates({ ...hoverStates, [`row-${usuario._id}`]: false })}
                 >
                   {columns.map((column) => (
-                    <td
-                      key={`${usuario._id}-${column.key}`}
-                      className="px-8 py-5 whitespace-nowrap text-sm text-gray-900 truncate max-w-xs"
-                      title={usuario[column.key]}
-                    >
-                      {column.key === "rol" ? (
+                    <td key={`${usuario._id}-${column.key}`} style={styles.tableCell}>
+                      {column.key === 'rol' ? (
                         <span
-                          className={`px-3 py-1 text-xs font-semibold rounded-full select-none ${
-                            usuario.rol === "admin"
-                              ? "bg-purple-200 text-purple-900"
-                              : "bg-green-200 text-green-900"
-                          }`}
+                          style={{
+                            ...styles.roleBadge,
+                            ...(usuario.rol === 'admin' ? styles.roleAdmin : styles.roleUser),
+                          }}
                         >
                           {usuario.rol}
                         </span>
@@ -364,53 +579,94 @@ return (
               ))}
             </tbody>
           </table>
-        </div>
 
-        {/* Pagination */}
-        <div className="bg-white px-6 py-4 flex items-center justify-between border-t border-gray-200 select-none">
-          <div className="flex-1 flex justify-between sm:hidden">
+          {/* Paginación */}
+          <div style={styles.pagination}>
             <button
-              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+              onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              style={{
+                ...styles.paginationButton,
+                ...(currentPage === 1 && styles.paginationButtonDisabled),
+              }}
+            >
+              Primera
+            </button>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              style={{
+                ...styles.paginationButton,
+                ...(currentPage === 1 && styles.paginationButtonDisabled),
+              }}
             >
               Anterior
             </button>
+
+            {getPageNumbers().map((number) => (
+              <button
+                key={number}
+                onClick={() => setCurrentPage(number)}
+                style={{
+                  ...styles.paginationButton,
+                  ...(currentPage === number && styles.paginationButtonActive),
+                }}
+              >
+                {number}
+              </button>
+            ))}
+
             <button
-              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              style={{
+                ...styles.paginationButton,
+                ...(currentPage === totalPages && styles.paginationButtonDisabled),
+              }}
             >
               Siguiente
             </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              style={{
+                ...styles.paginationButton,
+                ...(currentPage === totalPages && styles.paginationButtonDisabled),
+              }}
+            >
+              Última
+            </button>
           </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Mostrando{" "}
-                <span className="font-semibold">{indexOfFirstItem + 1}</span> a{" "}
-                <span className="font-semibold">
-                  {Math.min(indexOfLastItem, filteredData.length)}
-                </span>{" "}
-                de <span className="font-semibold">{filteredData.length}</span>{" "}
-                resultados
-              </p>
-            </div>
-            <div>
-              <nav
-                className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                aria-label="Pagination"
-              >
-                {/* Botones de paginación */}
-              </nav>
-            </div>
+        </div>
+
+        {/* Resumen */}
+        <div style={{ 
+          backgroundColor: 'white', 
+          borderRadius: '10px', 
+          padding: '15px', 
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          marginTop: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '10px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ color: '#555', marginRight: '5px' }}>Total usuarios:</span>
+            <strong>{filteredData.length}</strong>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ color: '#555', marginRight: '5px' }}>Administradores:</span>
+            <strong>{filteredData.filter(u => u.rol === 'admin').length}</strong>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ color: '#555', marginRight: '5px' }}>Usuarios activos:</span>
+            <strong>{filteredData.filter(u => u.ultimoAcceso !== 'Nunca').length}</strong>
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
-
-}
+  );
+};
 
 export default ReportesUsuarios;
