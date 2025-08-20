@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import Navbar from '../components/NavBar';
 
-function ReportesProductos() {
+const ReportesProductos = () => {
   // Configuración de columnas
   const columns = [
     { key: 'id', label: 'ID', width: '10%' },
@@ -14,16 +15,11 @@ function ReportesProductos() {
     { key: 'stock', label: 'Stock', width: '10%' }
   ];
 
-  // Estados del componente
+  // Estados
   const [datos, setDatos] = useState([]);
-  const [datosFiltrados, setDatosFiltrados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const rol = localStorage.getItem('rol');
-  
-  // Estados para filtros
   const [filtros, setFiltros] = useState({
     nombre: '',
     categoria: '',
@@ -32,17 +28,241 @@ function ReportesProductos() {
     minStock: '',
     maxStock: ''
   });
-  
-  // Estado para tipo de gráfico
   const [tipoGrafico, setTipoGrafico] = useState('barra');
+  const itemsPerPage = 10;
+  const rol = localStorage.getItem('rol');
 
-  // Obtener datos del API
+  // Estilos
+  const styles = {
+    container: {
+      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+      backgroundColor: '#f8f9fa',
+      minHeight: '100vh',
+    },
+    content: {
+      maxWidth: '1100px',
+      margin: '0 auto',
+      padding: '20px',
+    },
+    header: {
+      backgroundColor: 'white',
+      borderRadius: '10px',
+      padding: '20px',
+      marginBottom: '20px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    },
+    title: {
+      fontSize: '28px',
+      fontWeight: 'bold',
+      marginBottom: '0.3rem',
+      color: '#40916c',
+      display: 'flex',
+      alignItems: 'center',
+    },
+    subtitle: {
+      color: '#555',
+      marginBottom: '1.5rem',
+      fontSize: '16px',
+    },
+    searchContainer: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '20px',
+      flexWrap: 'wrap',
+      gap: '15px',
+    },
+    searchInput: {
+      flex: '1',
+      minWidth: '250px',
+      padding: '10px 15px',
+      borderRadius: '8px',
+      border: '1px solid #ddd',
+      fontSize: '14px',
+      outline: 'none',
+      transition: 'all 0.3s',
+    },
+    button: {
+      backgroundColor: '#40916c',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '10px 16px',
+      cursor: 'pointer',
+      fontWeight: '600',
+      fontSize: '14px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      transition: 'all 0.3s',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+    },
+    buttonHover: {
+      backgroundColor: '#52b788',
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+    },
+    tableContainer: {
+      backgroundColor: 'white',
+      borderRadius: '10px',
+      overflow: 'hidden',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      marginBottom: '20px',
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      tableLayout: 'fixed',
+    },
+    tableHeader: {
+      backgroundColor: '#40916c',
+      color: 'white',
+    },
+    tableHeaderCell: {
+      padding: '15px',
+      textAlign: 'left',
+      fontWeight: '600',
+      cursor: 'pointer',
+      userSelect: 'none',
+      transition: 'background-color 0.2s',
+    },
+    tableHeaderCellHover: {
+      backgroundColor: '#52b788',
+    },
+    tableRow: {
+      borderBottom: '1px solid #eee',
+    },
+    tableRowEven: {
+      backgroundColor: '#f7f9f9',
+    },
+    tableRowHover: {
+      backgroundColor: '#d8f3dc',
+    },
+    tableCell: {
+      padding: '12px 15px',
+      maxWidth: '0',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+    pagination: {
+      display: 'flex',
+      justifyContent: 'center',
+      padding: '15px',
+      backgroundColor: 'white',
+      borderTop: '1px solid #eee',
+    },
+    paginationButton: {
+      margin: '0 5px',
+      padding: '8px 12px',
+      borderRadius: '5px',
+      border: '1px solid #ddd',
+      backgroundColor: 'white',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+    },
+    paginationButtonActive: {
+      backgroundColor: '#40916c',
+      color: 'white',
+      borderColor: '#40916c',
+    },
+    paginationButtonDisabled: {
+      opacity: '0.5',
+      cursor: 'not-allowed',
+    },
+    loadingContainer: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '300px',
+      color: '#40916c',
+    },
+    errorContainer: {
+      backgroundColor: '#fff3f3',
+      padding: '20px',
+      borderRadius: '10px',
+      color: '#d32f2f',
+      textAlign: 'center',
+      margin: '20px 0',
+    },
+    emptyContainer: {
+      backgroundColor: 'white',
+      padding: '40px',
+      borderRadius: '10px',
+      textAlign: 'center',
+      color: '#555',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    },
+    filterContainer: {
+      backgroundColor: 'white',
+      borderRadius: '10px',
+      padding: '20px',
+      marginBottom: '20px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    },
+    filterGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+      gap: '15px',
+      marginBottom: '15px',
+    },
+    filterInput: {
+      width: '100%',
+      padding: '10px',
+      borderRadius: '6px',
+      border: '1px solid #ddd',
+      fontSize: '14px',
+    },
+    chartContainer: {
+      backgroundColor: 'white',
+      borderRadius: '10px',
+      padding: '20px',
+      marginBottom: '20px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    },
+    chartTitle: {
+      fontSize: '18px',
+      fontWeight: '600',
+      marginBottom: '15px',
+      color: '#40916c',
+    },
+    summaryCard: {
+      backgroundColor: 'white',
+      borderRadius: '10px',
+      padding: '15px',
+      marginBottom: '20px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      display: 'flex',
+      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      gap: '10px',
+    },
+    summaryItem: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '5px',
+    },
+    summaryLabel: {
+      color: '#555',
+    },
+    summaryValue: {
+      fontWeight: '600',
+      color: '#40916c',
+    },
+  };
+
+  // Obtener datos de la API
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get('http://localhost:5000/api/reportes/productos');
+        const response = await axios.get('http://localhost:5000/api/reportes/productos', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
         
         if (!response.data) throw new Error('No se recibieron datos del servidor');
         
@@ -57,7 +277,6 @@ function ReportesProductos() {
         }));
         
         setDatos(datosTransformados);
-        setDatosFiltrados(datosTransformados);
       } catch (err) {
         setError(`Error al cargar datos: ${err.message}`);
       } finally {
@@ -68,9 +287,9 @@ function ReportesProductos() {
     fetchData();
   }, []);
 
-  // Aplicar filtros
-  useEffect(() => {
-    if (datos.length === 0) return;
+  // Filtrar datos
+  const datosFiltrados = useMemo(() => {
+    if (datos.length === 0) return [];
     
     let resultado = [...datos];
     
@@ -110,11 +329,10 @@ function ReportesProductos() {
       );
     }
     
-    setDatosFiltrados(resultado);
-    setCurrentPage(1); // Resetear a la primera página al aplicar filtros
-  }, [filtros, datos]);
+    return resultado;
+  }, [datos, filtros]);
 
-  // Funcionalidad de exportación
+  // Exportar a Excel
   const exportToExcel = () => {
     const datosParaExportar = datosFiltrados.map(item => ({
       ...item,
@@ -124,11 +342,26 @@ function ReportesProductos() {
     const worksheet = XLSX.utils.json_to_sheet(datosParaExportar);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte');
+
+    // Estilos para Excel
+    const headerStyle = {
+      fill: { fgColor: { rgb: "40916C" } },
+      font: { color: { rgb: "FFFFFF" }, bold: true },
+    };
+
+    // Aplicar estilos a los encabezados
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_col(C) + "1";
+      if (!worksheet[cellAddress]) continue;
+      worksheet[cellAddress].s = headerStyle;
+    }
+
     XLSX.writeFile(workbook, `reporte_productos_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   // Preparar datos para gráficos
-  const prepararDatosGraficos = () => {
+  const { porCategoria, topPrecios, topStocks } = useMemo(() => {
     // Gráfico por categoría
     const porCategoria = datosFiltrados.reduce((acc, item) => {
       const existente = acc.find(i => i.name === item.categoria);
@@ -166,24 +399,16 @@ function ReportesProductos() {
       }));
     
     return { porCategoria, topPrecios, topStocks };
-  };
-  
-  const { porCategoria, topPrecios, topStocks } = prepararDatosGraficos();
+  }, [datosFiltrados]);
   
   // Colores para gráficos
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
-  // Cálculos de paginación
+  // Paginación
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = datosFiltrados.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(datosFiltrados.length / itemsPerPage);
-
-  // Estilos fijos para la tabla
-  const tableStyle = {
-    width: '100%',
-    tableLayout: 'fixed'
-  };
 
   // Manejar cambio de filtros
   const handleFilterChange = (e) => {
@@ -192,6 +417,7 @@ function ReportesProductos() {
       ...prev,
       [name]: value
     }));
+    setCurrentPage(1);
   };
 
   // Resetear filtros
@@ -204,29 +430,73 @@ function ReportesProductos() {
       minStock: '',
       maxStock: ''
     });
+    setCurrentPage(1);
   };
 
-  // Renderizado condicional
+  // Estados de hover
+  const [hoverStates, setHoverStates] = useState({
+    exportButton: false,
+    resetButton: false,
+    searchInput: false,
+  });
+
+  // Verificar acceso
+  if (rol !== "Consultor" && rol !== "Administrador") {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center", color: "#d32f2f" }}>
+        Acceso restringido. Solo los administradores y consultores pueden acceder a esta sección.
+      </div>
+    );
+  }
+
+  // Mostrar estados de carga, error o sin datos
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        <span className="ml-3 text-blue-600 font-medium">Cargando datos...</span>
+      <div style={styles.container}>
+        <Navbar />
+        <div style={styles.content}>
+          <div style={styles.loadingContainer}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="64"
+              height="64"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ animation: 'spin 1s linear infinite' }}
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+            <p style={{ marginTop: '20px', fontSize: '18px' }}>Cargando productos...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4 mx-4 my-6">
-        <div className="flex items-center">
-          <div className="flex-shrink-0 text-red-500">
-            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-red-700">{error}</p>
+      <div style={styles.container}>
+        <Navbar />
+        <div style={styles.content}>
+          <div style={styles.errorContainer}>
+            <h3 style={{ marginBottom: '10px' }}>Error al cargar los datos</h3>
+            <p style={{ marginBottom: '20px' }}>{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                ...styles.button,
+                backgroundColor: '#d32f2f',
+                ...(hoverStates.retryButton && { backgroundColor: '#f44336' }),
+              }}
+              onMouseEnter={() => setHoverStates({ ...hoverStates, retryButton: true })}
+              onMouseLeave={() => setHoverStates({ ...hoverStates, retryButton: false })}
+            >
+              Reintentar
+            </button>
           </div>
         </div>
       </div>
@@ -235,312 +505,447 @@ function ReportesProductos() {
 
   if (datos.length === 0) {
     return (
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mx-4 my-6">
-        <div className="flex items-center">
-          <div className="flex-shrink-0 text-yellow-400">
-            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+      <div style={styles.container}>
+        <Navbar />
+        <div style={styles.content}>
+          <div style={styles.emptyContainer}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#40916c"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
             </svg>
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-yellow-700">No hay datos disponibles para mostrar.</p>
+            <h3 style={{ margin: '20px 0 10px', fontSize: '20px' }}>No hay productos registrados</h3>
+            <p>No se encontraron productos en el sistema.</p>
           </div>
         </div>
       </div>
     );
   }
-  if (rol !== "Consultor" && rol !== "Administrador") {
-    return <p style={{ padding: "2rem" }}>Acceso restringido. Solo los administradores y consultores pueden acceder a esta sección.</p>;
-  }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Reporte de Productos</h1>
-        <p className="text-gray-600">Visualización y exportación de los productos registrados</p>
-      </div>
+    <div style={styles.container}>
+      <Navbar />
+      <div style={styles.content}>
+        {/* Encabezado */}
+        <div style={styles.header}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <div>
+              <h1 style={styles.title}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ marginRight: '10px' }}
+                >
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+                Reporte de Productos
+              </h1>
+              <p style={styles.subtitle}>Gestión y análisis de productos registrados en el sistema</p>
+            </div>
+          </div>
 
-      {/* Sección de Filtros */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6 p-4">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Filtros de Búsqueda</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-            <input
-              type="text"
-              name="nombre"
-              value={filtros.nombre}
-              onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Filtrar por nombre"
-            />
+          {/* Resumen */}
+          <div style={styles.summaryCard}>
+            <div style={styles.summaryItem}>
+              <span style={styles.summaryLabel}>Total productos:</span>
+              <span style={styles.summaryValue}>{datos.length}</span>
+            </div>
+            <div style={styles.summaryItem}>
+              <span style={styles.summaryLabel}>Filtrados:</span>
+              <span style={styles.summaryValue}>{datosFiltrados.length}</span>
+            </div>
+            <div style={styles.summaryItem}>
+              <span style={styles.summaryLabel}>Categorías:</span>
+              <span style={styles.summaryValue}>
+                {[...new Set(datosFiltrados.map(item => item.categoria))].length}
+              </span>
+            </div>
+            <div style={styles.summaryItem}>
+              <span style={styles.summaryLabel}>Precio promedio:</span>
+              <span style={styles.summaryValue}>
+                ${(datosFiltrados.reduce((sum, item) => sum + item.precio, 0) / (datosFiltrados.length || 1)).toFixed(2)}
+              </span>
+            </div>
           </div>
+        </div>
+
+        {/* Filtros */}
+        <div style={styles.filterContainer}>
+          <h2 style={styles.chartTitle}>Filtros de Búsqueda</h2>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-            <input
-              type="text"
-              name="categoria"
-              value={filtros.categoria}
-              onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Filtrar por categoría"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rango de Precio</label>
-            <div className="flex space-x-2">
+          <div style={styles.filterGrid}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', color: '#555' }}>Nombre</label>
+              <input
+                type="text"
+                name="nombre"
+                value={filtros.nombre}
+                onChange={handleFilterChange}
+                style={styles.filterInput}
+                placeholder="Filtrar por nombre"
+              />
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', color: '#555' }}>Categoría</label>
+              <input
+                type="text"
+                name="categoria"
+                value={filtros.categoria}
+                onChange={handleFilterChange}
+                style={styles.filterInput}
+                placeholder="Filtrar por categoría"
+              />
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', color: '#555' }}>Precio mínimo</label>
               <input
                 type="number"
                 name="minPrecio"
                 value={filtros.minPrecio}
                 onChange={handleFilterChange}
-                className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                style={styles.filterInput}
                 placeholder="Mínimo"
                 min="0"
                 step="0.01"
               />
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', color: '#555' }}>Precio máximo</label>
               <input
                 type="number"
                 name="maxPrecio"
                 value={filtros.maxPrecio}
                 onChange={handleFilterChange}
-                className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                style={styles.filterInput}
                 placeholder="Máximo"
                 min="0"
                 step="0.01"
               />
             </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rango de Stock</label>
-            <div className="flex space-x-2">
+            
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', color: '#555' }}>Stock mínimo</label>
               <input
                 type="number"
                 name="minStock"
                 value={filtros.minStock}
                 onChange={handleFilterChange}
-                className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                style={styles.filterInput}
                 placeholder="Mínimo"
                 min="0"
               />
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', color: '#555' }}>Stock máximo</label>
               <input
                 type="number"
                 name="maxStock"
                 value={filtros.maxStock}
                 onChange={handleFilterChange}
-                className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                style={styles.filterInput}
                 placeholder="Máximo"
                 min="0"
               />
             </div>
           </div>
-        </div>
-        
-        <div className="flex justify-end space-x-3">
-          <button
-            onClick={resetFilters}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Limpiar Filtros
-          </button>
-        </div>
-      </div>
-
-      {/* Resumen de resultados */}
-      <div className="mb-6 bg-blue-50 p-4 rounded-lg">
-        <p className="text-blue-800">
-          Mostrando <span className="font-bold">{datosFiltrados.length}</span> de <span className="font-bold">{datos.length}</span> productos
-          {filtros.nombre || filtros.categoria || filtros.minPrecio || filtros.maxPrecio || filtros.minStock || filtros.maxStock ? 
-           ' (filtrados)' : ''}
-        </p>
-      </div>
-
-      {/* Sección de Gráficos */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6 p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-700">Visualización de Datos</h2>
-          <div className="flex space-x-2">
+          
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
             <button
-              onClick={() => setTipoGrafico('barra')}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${tipoGrafico === 'barra' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+              onClick={resetFilters}
+              style={{
+                padding: '10px 15px',
+                borderRadius: '6px',
+                border: '1px solid #ddd',
+                backgroundColor: 'white',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                ...(hoverStates.resetButton && { backgroundColor: '#f5f5f5' }),
+              }}
+              onMouseEnter={() => setHoverStates({ ...hoverStates, resetButton: true })}
+              onMouseLeave={() => setHoverStates({ ...hoverStates, resetButton: false })}
             >
-              Barras
-            </button>
-            <button
-              onClick={() => setTipoGrafico('pie')}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${tipoGrafico === 'pie' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-            >
-              Circular
+              Limpiar Filtros
             </button>
           </div>
         </div>
 
-        {datosFiltrados.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Gráfico 1: Distribución por categoría */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-700 mb-2">Distribución por Categoría</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  {tipoGrafico === 'barra' ? (
-                    <BarChart data={porCategoria}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="value" name="Cantidad" fill="#8884d8" />
-                    </BarChart>
-                  ) : (
-                    <PieChart>
-                      <Pie
-                        data={porCategoria}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        nameKey="name"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {porCategoria.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  )}
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Gráfico 2: Top productos por precio o stock */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-700 mb-2">
-                Top 5 Productos {tipoGrafico === 'barra' ? 'por Precio' : 'por Stock'}
-              </h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  {tipoGrafico === 'barra' ? (
-                    <BarChart data={topPrecios}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="precio" name="Precio ($)" fill="#82ca9d" />
-                    </BarChart>
-                  ) : (
-                    <BarChart data={topStocks}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="stock" name="Stock" fill="#ffc658" />
-                    </BarChart>
-                  )}
-                </ResponsiveContainer>
-              </div>
+        {/* Gráficos */}
+        <div style={styles.chartContainer}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h2 style={styles.chartTitle}>Visualización de Datos</h2>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setTipoGrafico('barra')}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: tipoGrafico === 'barra' ? '#40916c' : '#eee',
+                  color: tipoGrafico === 'barra' ? 'white' : '#333',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Barras
+              </button>
+              <button
+                onClick={() => setTipoGrafico('pie')}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: tipoGrafico === 'pie' ? '#40916c' : '#eee',
+                  color: tipoGrafico === 'pie' ? 'white' : '#333',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Circular
+              </button>
             </div>
           </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            No hay datos para mostrar con los filtros actuales
-          </div>
-        )}
-      </div>
 
-      {/* Sección de Tabla */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        {/* Encabezado con controles */}
-        <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <button
-            onClick={exportToExcel}
-            className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md shadow-sm transition-colors duration-200 flex items-center"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Exportar a Excel
-          </button>
+          {datosFiltrados.length > 0 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              {/* Gráfico 1: Distribución por categoría */}
+              <div style={{ backgroundColor: '#f7f9f9', padding: '15px', borderRadius: '8px' }}>
+                <h3 style={{ marginBottom: '10px', color: '#40916c', fontWeight: '600' }}>
+                  Distribución por Categoría
+                </h3>
+                <div style={{ height: '300px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    {tipoGrafico === 'barra' ? (
+                      <BarChart data={porCategoria}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="value" name="Cantidad" fill="#8884d8" />
+                      </BarChart>
+                    ) : (
+                      <PieChart>
+                        <Pie
+                          data={porCategoria}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          nameKey="name"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {porCategoria.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    )}
+                  </ResponsiveContainer>
+                </div>
+              </div>
 
-          {totalPages > 1 && (
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-              >
-                Anterior
-              </button>
-              <span className="text-sm text-gray-700">
-                Página {currentPage} de {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-              >
-                Siguiente
-              </button>
+              {/* Gráfico 2: Top productos por precio o stock */}
+              <div style={{ backgroundColor: '#f7f9f9', padding: '15px', borderRadius: '8px' }}>
+                <h3 style={{ marginBottom: '10px', color: '#40916c', fontWeight: '600' }}>
+                  Top 5 Productos {tipoGrafico === 'barra' ? 'por Precio' : 'por Stock'}
+                </h3>
+                <div style={{ height: '300px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    {tipoGrafico === 'barra' ? (
+                      <BarChart data={topPrecios}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="precio" name="Precio ($)" fill="#82ca9d" />
+                      </BarChart>
+                    ) : (
+                      <BarChart data={topStocks}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="stock" name="Stock" fill="#ffc658" />
+                      </BarChart>
+                    )}
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px', color: '#555' }}>
+              No hay datos para mostrar con los filtros actuales
             </div>
           )}
         </div>
 
-        {/* Tabla de datos con tamaño fijo */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200" style={tableStyle}>
-            <thead className="bg-gray-50">
-              <tr>
-                {columns.map(col => (
-                  <th
-                    key={col.key}
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    style={{ width: col.width }}
-                  >
-                    {col.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {currentItems.map((item, idx) => (
-                <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-gray-100'}>
+        {/* Tabla de datos */}
+        <div style={styles.tableContainer}>
+          {/* Encabezado con controles */}
+          <div style={{ padding: '15px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button
+              onClick={exportToExcel}
+              style={{
+                ...styles.button,
+                ...(hoverStates.exportButton && styles.buttonHover),
+              }}
+              onMouseEnter={() => setHoverStates({ ...hoverStates, exportButton: true })}
+              onMouseLeave={() => setHoverStates({ ...hoverStates, exportButton: false })}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Exportar a Excel
+            </button>
+
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  style={{
+                    ...styles.paginationButton,
+                    ...(currentPage === 1 && styles.paginationButtonDisabled),
+                  }}
+                >
+                  Primera
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  style={{
+                    ...styles.paginationButton,
+                    ...(currentPage === 1 && styles.paginationButtonDisabled),
+                  }}
+                >
+                  Anterior
+                </button>
+                <span style={{ color: '#555' }}>
+                  Página {currentPage} de {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    ...styles.paginationButton,
+                    ...(currentPage === totalPages && styles.paginationButtonDisabled),
+                  }}
+                >
+                  Siguiente
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    ...styles.paginationButton,
+                    ...(currentPage === totalPages && styles.paginationButtonDisabled),
+                  }}
+                >
+                  Última
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Tabla */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={styles.table}>
+              <thead style={styles.tableHeader}>
+                <tr>
                   {columns.map(col => (
-                    <td
+                    <th
                       key={col.key}
-                      className="px-6 py-4 text-sm text-gray-900 overflow-hidden overflow-ellipsis whitespace-nowrap"
-                      style={{ width: col.width }}
-                      title={item[col.key === 'precio' ? 'precioFormateado' : col.key]} // Tooltip para contenido largo
+                      style={{
+                        ...styles.tableHeaderCell,
+                        width: col.width,
+                        ...(hoverStates[`header-${col.key}`] && styles.tableHeaderCellHover),
+                      }}
+                      onMouseEnter={() => setHoverStates({ ...hoverStates, [`header-${col.key}`]: true })}
+                      onMouseLeave={() => setHoverStates({ ...hoverStates, [`header-${col.key}`]: false })}
                     >
-                      {col.key === 'precio' ? item.precioFormateado : item[col.key]}
-                    </td>
+                      {col.label}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {currentItems.map((item, idx) => (
+                  <tr
+                    key={idx}
+                    style={{
+                      ...styles.tableRow,
+                      ...(idx % 2 === 0 ? {} : styles.tableRowEven),
+                      ...(hoverStates[`row-${item.id}`] && styles.tableRowHover),
+                    }}
+                    onMouseEnter={() => setHoverStates({ ...hoverStates, [`row-${item.id}`]: true })}
+                    onMouseLeave={() => setHoverStates({ ...hoverStates, [`row-${item.id}`]: false })}
+                  >
+                    {columns.map(col => (
+                      <td
+                        key={`${item.id}-${col.key}`}
+                        style={styles.tableCell}
+                        title={item[col.key === 'precio' ? 'precioFormateado' : col.key]}
+                      >
+                        {col.key === 'precio' ? item.precioFormateado : item[col.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Paginación inferior */}
-        {totalPages > 1 && (
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-center">
-            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+          {/* Paginación inferior */}
+          {totalPages > 1 && (
+            <div style={styles.pagination}>
               <button
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
-                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                style={{
+                  ...styles.paginationButton,
+                  ...(currentPage === 1 && styles.paginationButtonDisabled),
+                }}
               >
-                <span className="sr-only">Primera</span>
-                «
+                Primera
               </button>
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 let pageNum;
@@ -558,11 +963,10 @@ function ReportesProductos() {
                   <button
                     key={pageNum}
                     onClick={() => setCurrentPage(pageNum)}
-                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                      currentPage === pageNum
-                        ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                    }`}
+                    style={{
+                      ...styles.paginationButton,
+                      ...(currentPage === pageNum && styles.paginationButtonActive),
+                    }}
                   >
                     {pageNum}
                   </button>
@@ -571,17 +975,19 @@ function ReportesProductos() {
               <button
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                style={{
+                  ...styles.paginationButton,
+                  ...(currentPage === totalPages && styles.paginationButtonDisabled),
+                }}
               >
-                <span className="sr-only">Última</span>
-                »
+                Última
               </button>
-            </nav>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
-}
+};
 
-export default ReportesProductos;
+export default ReportesProductos; 
