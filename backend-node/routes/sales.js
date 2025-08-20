@@ -29,7 +29,7 @@ const authorizeRoles = (roles) => {
 };
 
 // Ruta para registrar una nueva venta (POST /api/ventas)
-router.post('/', authenticateToken, authorizeRoles(['Vendedor']), async (req, res) => {
+router.post('/', authenticateToken, authorizeRoles(['Vendedor', 'Administrador']), async (req, res) => {
     try {
         const { productosSeleccionados, total, clienteNombre, fecha } = req.body;
         const vendedorId = req.user.userId; // Obtenido del payload del token

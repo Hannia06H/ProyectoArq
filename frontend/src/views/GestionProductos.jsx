@@ -1,29 +1,33 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Navbar from '../components/NavBar';
 
-
 export default function GestionProductos() {
   const navigate = useNavigate();
   const [productos, setProductos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [formulario, setFormulario] = useState({
     id: null,
     nombre: "",
     descripcion: "",
-    precio: "",
-    categoria: "",
+    precio_compra: "",
+    precio_venta: "",
+    categoria_id: "",
     stock: ""
   });
   const [filtro, setFiltro] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("");
-  const [showReportesMenu, setShowReportesMenu] = useState(false); // 👈 aquí
-  const reportesButtonRef = useRef(null);
+  const [mensaje, setMensaje] = useState("");
+  const [mostrarMensaje, setMostrarMensaje] = useState(false);
 
   const rol = localStorage.getItem("rol");
 
   useEffect(() => {
-    if (rol === "Administrador") obtenerProductos();
+    if (rol === "Administrador") {
+      obtenerProductos();
+      obtenerCategorias();
+    }
   }, []);
 
   const obtenerProductos = async () => {
@@ -35,16 +39,51 @@ export default function GestionProductos() {
         id: producto[0],
         nombre: producto[1] || "Sin nombre",
         descripcion: producto[2] || "",
-        precio: producto[3] || 0,
-        categoria: producto[4] || "Sin categoría",
-        stock: producto[5] || 0
+        precio_compra: producto[3] || 0,
+        precio_venta: producto[4] || 0,
+        categoria_id: producto[5] || "",
+        stock: producto[6] || 0
       }));
       
       setProductos(productosTransformados);
     } catch (error) {
       console.error("Error al obtener productos:", error);
-      alert("Error al cargar productos");
+      mostrarAlerta("Error al cargar productos");
     }
+  };
+
+  const obtenerCategorias = async () => {
+    try {
+      // Si tienes endpoint para categorías, úsalo, sino usa estas por defecto
+      const categoriasPorDefecto = [
+        {id: 1, nombre: "Electrónicos"},
+        {id: 2, nombre: "Ropa"},
+        {id: 3, nombre: "Calzado"},
+        {id: 4, nombre: "Accesorios"},
+        {id: 5, nombre: "Hogar"},
+        {id: 6, nombre: "Libros"},
+        {id: 7, nombre: "Papelería"},
+        {id: 8, nombre: "Oficina"},
+        {id: 9, nombre: "Deportes"},
+        {id: 10, nombre: "Belleza"},
+        {id: 11, nombre: "Juguetes"},
+        {id: 12, nombre: "Muebles"},
+        {id: 13, nombre: "Alimentos"},
+        {id: 14, nombre: "Jardín"},
+        {id: 15, nombre: "Bricolaje"},
+        {id: 16, nombre: "Arte"},
+        {id: 17, nombre: "Otro"}
+      ];
+      setCategorias(categoriasPorDefecto);
+    } catch (error) {
+      console.error("Error al obtener categorías:", error);
+    }
+  };
+
+  const mostrarAlerta = (msg) => {
+    setMensaje(msg);
+    setMostrarMensaje(true);
+    setTimeout(() => setMostrarMensaje(false), 3000);
   };
 
   const handleChange = (e) => {
@@ -59,22 +98,29 @@ export default function GestionProductos() {
           `http://localhost:5000/api/productos/${formulario.id}`,
           formulario
         );
+        mostrarAlerta("Producto actualizado correctamente");
       } else {
         await axios.post("http://localhost:5000/api/productos", formulario);
+        mostrarAlerta("Producto agregado correctamente");
       }
 
+      // Limpiar formulario
       setFormulario({
         id: null,
         nombre: "",
         descripcion: "",
-        precio: "",
-        categoria: "",
+        precio_compra: "",
+        precio_venta: "",
+        categoria_id: "",
         stock: ""
       });
+      
+      // Actualizar lista de productos
       obtenerProductos();
+      
     } catch (error) {
       console.error(error);
-      alert("Error al guardar producto");
+      mostrarAlerta("Error al guardar producto");
     }
   };
 
@@ -83,32 +129,46 @@ export default function GestionProductos() {
       id: prod.id,
       nombre: prod.nombre,
       descripcion: prod.descripcion,
-      precio: prod.precio,
-      categoria: prod.categoria,
+      precio_compra: prod.precio_compra,
+      precio_venta: prod.precio_venta,
+      categoria_id: prod.categoria_id, // Guardamos el ID para el formulario
       stock: prod.stock
     });
   };
 
   const eliminarProducto = async (id) => {
-    if (!window.confirm("¿Eliminar este producto?")) return;
+    if (!window.confirm("¿Estás seguro de eliminar este producto?")) return;
     try {
       await axios.delete(`http://localhost:5000/api/productos/${id}`);
+      mostrarAlerta("Producto eliminado correctamente");
       obtenerProductos();
     } catch (error) {
       console.error("Error al eliminar:", error);
+      mostrarAlerta("Error al eliminar producto");
     }
+  };
+
+  const cancelarEdicion = () => {
+    setFormulario({
+      id: null,
+      nombre: "",
+      descripcion: "",
+      precio_compra: "",
+      precio_venta: "",
+      categoria_id: "",
+      stock: ""
+    });
+  };
+
+  // Obtener nombre de categoría por ID
+  const obtenerNombreCategoria = (id) => {
+    const categoria = categorias.find(cat => cat.id == id); // Usar == en lugar de === para comparar string con número
+    return categoria ? categoria.nombre : "Sin categoría";
   };
 
   if (rol !== "Administrador") {
     return <p style={{ padding: "2rem" }}>Acceso restringido.</p>;
   }
-
-  // Lista de categorías para reutilizar en selects
-  const categorias = [
-    "Electrónicos", "Ropa", "Calzado", "Accesorios", "Hogar", "Libros",
-    "Papelería", "Oficina", "Deportes", "Belleza", "Juguetes", "Muebles",
-    "Alimentos", "Jardín", "Bricolaje", "Arte","Otro",
-  ];
 
   return (
     <div>
@@ -116,7 +176,25 @@ export default function GestionProductos() {
       <Navbar />
 
       {/* CONTENIDO PRINCIPAL */}
-      <div style={{ display: "flex", padding: "2rem", gap: "2rem", paddingTop: "100px" /* para que no quede debajo del navbar */ }}>
+      <div style={{ display: "flex", padding: "2rem", gap: "2rem", paddingTop: "100px" }}>
+        
+        {/* Mensaje de alerta */}
+        {mostrarMensaje && (
+          <div style={{
+            position: "fixed",
+            top: "100px",
+            right: "20px",
+            backgroundColor: "#4CAF50",
+            color: "white",
+            padding: "1rem",
+            borderRadius: "4px",
+            zIndex: 1000,
+            boxShadow: "0 4px 8px rgba(0,0,0,0.1)"
+          }}>
+            {mensaje}
+          </div>
+        )}
+
         {/* FORMULARIO */}
         <form
           onSubmit={handleSubmit}
@@ -128,94 +206,145 @@ export default function GestionProductos() {
           }}
         >
           <h2>{formulario.id ? "Editar" : "Agregar"} producto</h2>
+          
           <input
             type="text"
             name="nombre"
-            placeholder="Nombre"
+            placeholder="Nombre del producto"
             value={formulario.nombre}
             onChange={handleChange}
             required
+            style={inputStyle}
           />
-          <input
-            type="text"
+          
+          <textarea
             name="descripcion"
             placeholder="Descripción"
             value={formulario.descripcion}
             onChange={handleChange}
+            style={{...inputStyle, minHeight: "80px", resize: "vertical"}}
           />
-          <input
-            type="number"
-            name="precio"
-            placeholder="Precio"
-            value={formulario.precio}
-            onChange={handleChange}
-            required
-          />
+          
+          <div style={{display: "flex", gap: "10px"}}>
+            <input
+              type="number"
+              name="precio_compra"
+              placeholder="Precio compra"
+              value={formulario.precio_compra}
+              onChange={handleChange}
+              required
+              style={{...inputStyle, flex: 1}}
+              step="0.01"
+              min="0"
+            />
+            
+            <input
+              type="number"
+              name="precio_venta"
+              placeholder="Precio venta"
+              value={formulario.precio_venta}
+              onChange={handleChange}
+              required
+              style={{...inputStyle, flex: 1}}
+              step="0.01"
+              min="0"
+            />
+          </div>
+          
           <select
-            name="categoria"
-            value={formulario.categoria}
+            name="categoria_id"
+            value={formulario.categoria_id}
             onChange={handleChange}
             required
-            style={{
-              padding: "0.75rem",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              width: "100%",
-              boxSizing: "border-box"
-            }}
+            style={inputStyle}
           >
             <option value="">Selecciona categoría</option>
-            {["Electrónica", "Ropa", "Calzado", "Accesorios", "Hogar", "Libros",
-    "Papelería", "Oficina", "Deportes", "Belleza", "Juguetes", "Muebles",
-    "Alimentos", "Jardín", "Bricolaje", "Arte","Otro",].map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+            {categorias.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.nombre}</option>
             ))}
           </select>
+          
           <input
             type="number"
             name="stock"
-            placeholder="Stock"
+            placeholder="Stock disponible"
             value={formulario.stock}
             onChange={handleChange}
             required
+            style={inputStyle}
+            min="0"
           />
-          <button type="submit" style={submitButtonStyle(formulario.id)}>
-            {formulario.id ? "Actualizar producto" : "Guardar producto"}
-          </button>
+          
+          <div style={{display: "flex", gap: "10px"}}>
+            <button type="submit" style={submitButtonStyle(formulario.id)}>
+              {formulario.id ? "Actualizar" : "Agregar"} producto
+            </button>
+            
+            {formulario.id && (
+              <button 
+                type="button" 
+                onClick={cancelarEdicion}
+                style={{...submitButtonStyle(false), backgroundColor: "#999"}}
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
         </form>
 
         {/* TABLA Y FILTROS */}
         <div style={{ width: "60%", display: "flex", flexDirection: "column" }}>
-          <h2>Productos registrados</h2>
+          <h2>Productos registrados ({productos.length})</h2>
 
-          {/* FILTROS FIJOS */}
-          <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-            <input
-              type="text"
-              placeholder="Buscar por nombre"
-              value={filtro}
-              onChange={(e) => setFiltro(e.target.value)}
-              style={{ flex: 1, padding: "8px" }}
-            />
-            <select
-            name="filtroCategoria" 
-              value={filtroCategoria}
-              onChange={(e) => setFiltroCategoria(e.target.value)}
-              style={{
-                padding: "8px",
-                width: "100%",
-                boxSizing: "border-box",
-                border: "1px solid #ddd",
-                borderRadius: "4px"
-              }}
-            >
-              <option value="">Todas las categorías</option>
-              {["Electrónica", "Ropa", "Calzado", "Accesorios", "Hogar", "Libros",
-    "Papelería", "Oficina", "Deportes", "Belleza", "Juguetes", "Muebles",
-    "Alimentos", "Jardín", "Bricolaje", "Arte","Otro",].map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+          {/* FILTROS MEJORADOS */}
+          <div style={{ 
+            display: "flex", 
+            gap: "1rem", 
+            marginBottom: "1rem",
+            padding: "15px",
+            backgroundColor: "#f8f9fa",
+            borderRadius: "8px",
+            border: "1px solid #e9ecef"
+          }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              <label style={{ marginBottom: "5px", fontWeight: "500", fontSize: "14px" }}>
+                Buscar por nombre
+              </label>
+              <input
+                type="text"
+                placeholder="Escribe para buscar..."
+                value={filtro}
+                onChange={(e) => setFiltro(e.target.value)}
+                style={{ 
+                  padding: "10px",
+                  border: "1px solid #ced4da",
+                  borderRadius: "6px",
+                  fontSize: "16px"
+                }}
+              />
+            </div>
+            
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              <label style={{ marginBottom: "5px", fontWeight: "500", fontSize: "14px" }}>
+                Filtrar por categoría
+              </label>
+              <select
+                value={filtroCategoria}
+                onChange={(e) => setFiltroCategoria(e.target.value)}
+                style={{
+                  padding: "10px",
+                  border: "1px solid #ced4da",
+                  borderRadius: "6px",
+                  fontSize: "16px",
+                  backgroundColor: "white"
+                }}
+              >
+                <option value="">Todas las categorías</option>
+                {categorias.map(cat => (
+                  <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* TABLA CON SCROLL */}
@@ -224,62 +353,69 @@ export default function GestionProductos() {
             overflowY: "auto",
             maxHeight: "500px",
             border: "1px solid #ddd",
-            borderRadius: "4px"
+            borderRadius: "8px",
+            backgroundColor: "white"
           }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead style={{ position: "sticky", top: 0, backgroundColor: "#f2f2f2", zIndex: 1 }}>
+              <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
                 <tr>
                   <th style={tableHeaderStyle}>Nombre</th>
                   <th style={tableHeaderStyle}>Descripción</th>
-                  <th style={tableHeaderStyle}>Precio</th>
+                  <th style={tableHeaderStyle}>P. Compra</th>
+                  <th style={tableHeaderStyle}>P. Venta</th>
                   <th style={tableHeaderStyle}>Categoría</th>
                   <th style={tableHeaderStyle}>Stock</th>
                   <th style={tableHeaderStyle}>Acciones</th>
                 </tr>
               </thead>
+              
               <tbody>
-  {productos
-    .filter(p =>
-      p.nombre.toLowerCase().includes(filtro.toLowerCase()) &&
-      (filtroCategoria === "" || p.categoria === filtroCategoria)
-    )
-    .length === 0 ? ( // Si no hay productos después del filtrado
-      <tr>
-        <td colSpan="6" style={{ textAlign: "center", padding: "2rem", color: "#666" }}>
-          No hay productos disponibles {filtro || filtroCategoria ? "con los filtros aplicados" : ""}.
-        </td>
-      </tr>
-    ) : (
-      productos
-        .filter(p =>
-          p.nombre.toLowerCase().includes(filtro.toLowerCase()) &&
-          (filtroCategoria === "" || p.categoria === filtroCategoria)
-        )
-        .map(p => (
-          <tr key={p.id} style={{ borderBottom: "1px solid #ddd" }}>
-            <td style={tableCellStyle}>{p.nombre}</td>
-            <td style={tableCellStyle}>{p.descripcion}</td>
-            <td style={tableCellStyle}>${p.precio}</td>
-            <td style={tableCellStyle}>{p.categoria}</td>
-            <td style={tableCellStyle}>{p.stock}</td>
-            <td style={tableCellStyle}>
-              <button
-                onClick={() => handleEditar(p)}
-                style={actionButtonStyle("#4CAF50")}
-              >
-                Editar
-              </button>
-              <button
-                onClick={() => eliminarProducto(p.id)}
-                style={actionButtonStyle("#f44336")}
-              >
-                Eliminar
-              </button>
-            </td>
-          </tr>
-        ))
-    )}
-</tbody>
+                {productos
+                  .filter(p =>
+                    p.nombre.toLowerCase().includes(filtro.toLowerCase()) &&
+                    (filtroCategoria === "" || obtenerNombreCategoria(p.categoria_id) === filtroCategoria)
+                  )
+                  .length === 0 ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: "center", padding: "2rem", color: "#666", fontStyle: "italic" }}>
+                        {filtro || filtroCategoria ? "No se encontraron productos con los filtros aplicados" : "No hay productos registrados"}
+                      </td>
+                    </tr>
+                  ) : (
+                    productos
+                      .filter(p =>
+                        p.nombre.toLowerCase().includes(filtro.toLowerCase()) &&
+                        (filtroCategoria === "" || obtenerNombreCategoria(p.categoria_id) === filtroCategoria)
+                      )
+                      .map(p => (
+                        <tr key={p.id} style={{ borderBottom: "1px solid #e9ecef" }}>
+                          <td style={{...tableCellStyle, fontWeight: "500"}}>{p.nombre}</td>
+                          <td style={tableCellStyle}>{p.descripcion}</td>
+                          <td style={tableCellStyle}>${parseFloat(p.precio_compra).toFixed(2)}</td>
+                          <td style={tableCellStyle}>${parseFloat(p.precio_venta).toFixed(2)}</td>
+                          {/* Mostrar el nombre de la categoría en lugar del ID */}
+                          <td style={tableCellStyle}>{obtenerNombreCategoria(p.categoria_id)}</td>
+                          <td style={tableCellStyle}>{p.stock}</td>
+                          <td style={tableCellStyle}>
+                            <div style={{ display: "flex", gap: "8px" }}>
+                              <button
+                                onClick={() => handleEditar(p)}
+                                style={actionButtonStyle("#4CAF50")}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => eliminarProducto(p.id)}
+                                style={actionButtonStyle("#f44336")}
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+              </tbody>
             </table>
           </div>
         </div>
@@ -289,68 +425,57 @@ export default function GestionProductos() {
 }
 
 // Estilos reutilizables
-const navButtonStyle = (color) => ({
-  backgroundColor: color,
+const inputStyle = {
+  padding: "12px",
+  border: "1px solid #ced4da",
+  borderRadius: "6px",
+  width: "100%",
+  boxSizing: "border-box",
+  fontSize: "16px"
+};
+
+const submitButtonStyle = (isEdit) => ({
+  padding: "12px 16px",
+  backgroundColor: isEdit ? "#28a745" : "#007bff",
   color: "white",
   border: "none",
-  padding: "0.5rem 1rem",
-  borderRadius: "4px",
+  borderRadius: "6px",
   cursor: "pointer",
-  transition: "background-color 0.3s",
-  "&:hover": {
-    opacity: 0.9
+  fontWeight: "500",
+  flex: 1,
+  fontSize: "16px",
+  transition: "background-color 0.2s",
+  ":hover": {
+    backgroundColor: isEdit ? "#218838" : "#0069d9"
   }
 });
 
-const submitButtonStyle = (isEdit) => ({
-  padding: "0.75rem",
-  backgroundColor: isEdit ? "#4CAF50" : "#2196F3",
-  color: "white",
-  border: "none",
-  borderRadius: "4px",
-  cursor: "pointer",
-  fontWeight: "bold"
-});
-
 const tableHeaderStyle = {
-  padding: "12px",
+  padding: "16px 12px",
   textAlign: "left",
-  backgroundColor: "#333",
-  color: "white"
+  backgroundColor: "#343a40",
+  color: "white",
+  fontWeight: "600",
+  fontSize: "15px"
 };
 
 const tableCellStyle = {
-  padding: "12px",
-  textAlign: "left"
+  padding: "14px 12px",
+  textAlign: "left",
+  fontSize: "15px"
 };
 
 const actionButtonStyle = (color) => ({
   backgroundColor: color,
   color: "white",
   border: "none",
-  padding: "6px 12px",
+  padding: "8px 12px",
   borderRadius: "4px",
   cursor: "pointer",
-  marginRight: "8px",
-  "&:hover": {
-    opacity: 0.8
+  fontSize: "14px",
+  fontWeight: "500",
+  transition: "background-color 0.2s",
+  ":hover": {
+    opacity: 0.9
   }
 });
-
-// Estilo para los botones del submenú
-const subMenuButtonStyle = {
-  width: "100%",
-  padding: "0.75rem 1rem",
-  textAlign: "left",
-  border: "none",
-  backgroundColor: "transparent",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  gap: "0.5rem",
-  fontSize: "0.9rem",
-  color: "#333",
-  "&:hover": {
-    backgroundColor: "#f5f5f5"
-  }
-};

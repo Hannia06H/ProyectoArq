@@ -479,7 +479,7 @@ return (
         )}
       </div>
     </div>
-  </div> // 👈 cierro el contenedor principal aquí
+  </div> 
 );
 
   
