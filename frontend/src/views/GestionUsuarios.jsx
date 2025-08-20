@@ -2,16 +2,17 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Navbar from '../components/NavBar';
 
-const NODE_API_URL = "http://localhost:4000/api/usuarios"; // URL base de usuarios
+const NODE_API_URL = "http://localhost:4000/api/users"; // URL actualizada
 
 export default function GestionUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
+  const [roles, setRoles] = useState([]); // Nuevo estado para roles
   const [filtroNombre, setFiltroNombre] = useState("");
   const [filtroRol, setFiltroRol] = useState("");
   const [formUsuario, setFormUsuario] = useState({
     nombre: "",
     email: "",
-    rol: "Vendedor",
+    rol: "",
     password: ""
   });
   const [editandoId, setEditandoId] = useState(null);
@@ -32,7 +33,19 @@ export default function GestionUsuarios() {
 
   useEffect(() => {
     obtenerUsuarios();
+    obtenerRoles(); // Obtener la lista de roles
   }, [filtroNombre, filtroRol]);
+
+  const obtenerRoles = async () => {
+    try {
+      const res = await axios.get('http://localhost:4000/api/roles', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRoles(res.data);
+    } catch (error) {
+      console.error("Error al obtener roles:", error);
+    }
+  };
 
   const obtenerUsuarios = async () => {
     try {
@@ -65,7 +78,7 @@ export default function GestionUsuarios() {
         });
         alert("Usuario registrado con éxito.");
       }
-      setFormUsuario({ nombre: "", email: "", rol: "Vendedor", password: "" });
+      setFormUsuario({ nombre: "", email: "", rol: "", password: "" });
       setEditandoId(null);
       obtenerUsuarios();
     } catch (error) {
@@ -89,7 +102,12 @@ export default function GestionUsuarios() {
   };
 
   const editarUsuario = (usuario) => {
-    setFormUsuario({ nombre: usuario.nombre, email: usuario.email, rol: usuario.rol, password: "" });
+    setFormUsuario({ 
+      nombre: usuario.nombre, 
+      email: usuario.email, 
+      rol: usuario.rol._id, // Usar el ID del rol
+      password: "" 
+    });
     setEditandoId(usuario._id);
   };
 
@@ -97,158 +115,160 @@ export default function GestionUsuarios() {
     return <p style={{ padding: "2rem" }}>Acceso restringido. Solo los administradores pueden acceder a la gestión de usuarios.</p>;
   }
 
- return (
-  <div>
-    {/* Navbar */}
-    <Navbar />
+  return (
+    <div>
+      {/* Navbar */}
+      <Navbar />
 
-    {/* Contenido principal */}
-    <div style={{ 
-      display: "flex", 
-      padding: "2rem", 
-      gap: "2rem", 
-      maxWidth: "1200px", 
-      margin: "0 auto", 
-      fontFamily: "Arial, sans-serif"
-    }}>
-      {/* Formulario */}
+      {/* Contenido principal */}
       <div style={{ 
-        border: '1px solid #ddd', 
-        borderRadius: '8px', 
-        padding: '1.5rem', 
-        width: "40%", 
-        background: 'white',
-        height: "fit-content"
+        display: "flex", 
+        padding: "2rem", 
+        gap: "2rem", 
+        maxWidth: "1200px", 
+        margin: "0 auto", 
+        fontFamily: "Arial, sans-serif"
       }}>
-        <h2>{editandoId ? "Editar Usuario" : "Registrar Usuario"}</h2>
-        <form onSubmit={registrarOEditarUsuario} style={{ display: "flex", flexDirection: "column" }}>
-          <input 
-            type="text" 
-            name="nombre" 
-            placeholder="Nombre" 
-            value={formUsuario.nombre} 
-            onChange={handleChangeForm} 
-            style={inputStyle} 
-            required 
-          />
-          <input 
-            type="email" 
-            name="email" 
-            placeholder="Email" 
-            value={formUsuario.email} 
-            onChange={handleChangeForm} 
-            style={inputStyle} 
-            required 
-          />
-          <select 
-            name="rol" 
-            value={formUsuario.rol} 
-            onChange={handleChangeForm} 
-            style={inputStyle}
-          >
-            <option value="Administrador">Administrador</option>
-            <option value="Vendedor">Vendedor</option>
-            <option value="Consultor">Consultor</option>
-          </select>
-          <input 
-            type="password" 
-            name="password" 
-            placeholder="Contraseña" 
-            value={formUsuario.password} 
-            onChange={handleChangeForm} 
-            style={inputStyle} 
-            required={!editandoId} 
-          />
-          <button 
-            type="submit" 
-            style={primaryButton}
-          >
-            {editandoId ? "Actualizar" : "Registrar"}
-          </button>
-        </form>
-      </div>
-
-      {/* Tabla */}
-      <div style={{ 
-        border: '1px solid #ddd', 
-        borderRadius: '8px', 
-        padding: '1.5rem', 
-        width: "60%", 
-        background: 'white'
-      }}>
-        <h2>Usuarios Registrados</h2>
+        {/* Formulario */}
         <div style={{ 
-          marginBottom: "10px", 
-          display: "flex", 
-          gap: "10px" 
+          border: '1px solid #ddd', 
+          borderRadius: '8px', 
+          padding: '1.5rem', 
+          width: "40%", 
+          background: 'white',
+          height: "fit-content"
         }}>
-          <input 
-            type="text" 
-            placeholder="Filtrar por nombre" 
-            value={filtroNombre} 
-            onChange={(e) => setFiltroNombre(e.target.value)} 
-            style={inputStyle} 
-          />
-          <select 
-            value={filtroRol} 
-            onChange={(e) => setFiltroRol(e.target.value)} 
-            style={inputStyle}
-          >
-            <option value="">Todos los roles</option>
-            <option value="Administrador">Administrador</option>
-            <option value="Vendedor">Vendedor</option>
-            <option value="Consultor">Consultor</option>
-          </select>
+          <h2>{editandoId ? "Editar Usuario" : "Registrar Usuario"}</h2>
+          <form onSubmit={registrarOEditarUsuario} style={{ display: "flex", flexDirection: "column" }}>
+            <input 
+              type="text" 
+              name="nombre" 
+              placeholder="Nombre" 
+              value={formUsuario.nombre} 
+              onChange={handleChangeForm} 
+              style={inputStyle} 
+              required 
+            />
+            <input 
+              type="email" 
+              name="email" 
+              placeholder="Email" 
+              value={formUsuario.email} 
+              onChange={handleChangeForm} 
+              style={inputStyle} 
+              required 
+            />
+            <select 
+              name="rol" 
+              value={formUsuario.rol} 
+              onChange={handleChangeForm} 
+              style={inputStyle}
+              required
+            >
+              <option value="">Seleccionar Rol</option>
+              {roles.map(role => (
+                <option key={role._id} value={role._id}>{role.nombre}</option>
+              ))}
+            </select>
+            <input 
+              type="password" 
+              name="password" 
+              placeholder="Contraseña" 
+              value={formUsuario.password} 
+              onChange={handleChangeForm} 
+              style={inputStyle} 
+              required={!editandoId} 
+            />
+            <button 
+              type="submit" 
+              style={primaryButton}
+            >
+              {editandoId ? "Actualizar" : "Registrar"}
+            </button>
+          </form>
         </div>
 
-        {usuarios.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#6c757d" }}>
-            No hay usuarios registrados.
-          </p>
-        ) : (
-          <div style={{ maxHeight: "500px", overflowY: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={tableHeaderStyle}>Nombre</th>
-                  <th style={tableHeaderStyle}>Email</th>
-                  <th style={tableHeaderStyle}>Rol</th>
-                  <th style={tableHeaderStyle}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usuarios.map(u => (
-                  <tr key={u._id}>
-                    <td style={tableCellStyle}>{u.nombre}</td>
-                    <td style={tableCellStyle}>{u.email}</td>
-                    <td style={tableCellStyle}>{u.rol}</td>
-                    <td style={tableCellStyle}>
-                      <button 
-                        onClick={() => editarUsuario(u)} 
-                        style={{ 
-                          ...buttonStyle, 
-                          backgroundColor: '#ffc107', 
-                          color: 'white', 
-                          marginRight: '5px' 
-                        }}
-                      >
-                        Editar
-                      </button>
-                      <button 
-                        onClick={() => eliminarUsuario(u._id)} 
-                        style={dangerButton}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Tabla */}
+        <div style={{ 
+          border: '1px solid #ddd', 
+          borderRadius: '8px', 
+          padding: '1.5rem', 
+          width: "60%", 
+          background: 'white'
+        }}>
+          <h2>Usuarios Registrados</h2>
+          <div style={{ 
+            marginBottom: "10px", 
+            display: "flex", 
+            gap: "10px" 
+          }}>
+            <input 
+              type="text" 
+              placeholder="Filtrar por nombre" 
+              value={filtroNombre} 
+              onChange={(e) => setFiltroNombre(e.target.value)} 
+              style={inputStyle} 
+            />
+            <select 
+              value={filtroRol} 
+              onChange={(e) => setFiltroRol(e.target.value)} 
+              style={inputStyle}
+            >
+              <option value="">Todos los roles</option>
+              {roles.map(role => (
+                <option key={role._id} value={role._id}>{role.nombre}</option>
+              ))}
+            </select>
           </div>
-        )}
+
+          {usuarios.length === 0 ? (
+            <p style={{ textAlign: "center", color: "#6c757d" }}>
+              No hay usuarios registrados.
+            </p>
+          ) : (
+            <div style={{ maxHeight: "500px", overflowY: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={tableHeaderStyle}>Nombre</th>
+                    <th style={tableHeaderStyle}>Email</th>
+                    <th style={tableHeaderStyle}>Rol</th>
+                    <th style={tableHeaderStyle}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usuarios.map(u => (
+                    <tr key={u._id}>
+                      <td style={tableCellStyle}>{u.nombre}</td>
+                      <td style={tableCellStyle}>{u.email}</td>
+                      <td style={tableCellStyle}>{u.rol?.nombre}</td>
+                      <td style={tableCellStyle}>
+                        <button 
+                          onClick={() => editarUsuario(u)} 
+                          style={{ 
+                            ...buttonStyle, 
+                            backgroundColor: '#ffc107', 
+                            color: 'white', 
+                            marginRight: '5px' 
+                          }}
+                        >
+                          Editar
+                        </button>
+                        <button 
+                          onClick={() => eliminarUsuario(u._id)} 
+                          style={dangerButton}
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
-}
+  );
+} 

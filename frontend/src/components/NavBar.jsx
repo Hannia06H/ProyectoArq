@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -6,6 +5,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showReportesMenu, setShowReportesMenu] = useState(false);
+  const userNombre = localStorage.getItem('nombre') || 'Usuario';
 
   const currentPath = location.pathname;
 
@@ -17,6 +17,9 @@ const Navbar = () => {
     borderRadius: "4px",
     cursor: "pointer",
     transition: "background-color 0.3s",
+    "&:hover": {
+      opacity: 0.9
+    }
   });
 
   const subMenuButtonStyle = {
@@ -31,25 +34,37 @@ const Navbar = () => {
     gap: "0.5rem",
     fontSize: "0.9rem",
     color: "#333",
+    "&:hover": {
+      backgroundColor: "#f5f5f5"
+    }
   };
 
   // Función auxiliar para mostrar siempre los botones de reportes
   const isReportesPath = currentPath.startsWith("/reportes");
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("rol");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("nombre");
+    navigate("/");
+  };
+
   return (
     <div
       style={{
-    backgroundColor: "#333",
-    padding: "1rem",
-    display: "flex",
-    gap: "1rem",
-    position: "fixed", // <-- fijo arriba
-    top: 0,
-    left: 0,
-    width: "100%",     // <-- ocupa todo el ancho
-    zIndex: 999,       // <-- para que quede encima de todo
-    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-  }}
+        backgroundColor: "#333",
+        padding: "1rem",
+        display: "flex",
+        gap: "1rem",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        zIndex: 999,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+        alignItems: "center"
+      }}
     >
       {/* Gestión de Productos */}
       {(isReportesPath || currentPath !== "/productos") && (
@@ -143,16 +158,55 @@ const Navbar = () => {
         )}
       </div>
 
+      {/* Información del usuario */}
+      <div style={{ 
+        color: 'white', 
+        marginLeft: 'auto', 
+        marginRight: '1rem',
+        display: 'flex',
+        alignItems: 'center',
+        fontSize: '0.9rem'
+      }}>
+        <span style={{ marginRight: '0.5rem' }}>Bienvenido,</span>
+        <strong>{userNombre}</strong>
+        <span style={{ 
+          marginLeft: '0.8rem', 
+          padding: '0.2rem 0.5rem', 
+          backgroundColor: '#555', 
+          borderRadius: '4px',
+          fontSize: '0.8rem'
+        }}>
+          {localStorage.getItem('rol')}
+        </span>
+      </div>
+
       {/* Botón Cerrar Sesión */}
       <button
-        onClick={() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("rol");
-          navigate("/");
+        onClick={handleLogout}
+        style={{ 
+          ...navButtonStyle("#f44336"), 
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem"
         }}
-        style={{ ...navButtonStyle("#f44336"), marginLeft: "auto" }}
+        title="Cerrar sesión"
       >
-        Cerrar Sesión
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          width="16" 
+          height="16" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+        >
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        Salir
       </button>
     </div>
   );

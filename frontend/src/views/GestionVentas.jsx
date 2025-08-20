@@ -5,7 +5,7 @@ import axios from 'axios';
 import Navbar from '../components/NavBar';
 
 // URLs de los backends
-const NODE_API_URL = "http://localhost:4000/api"; // Para Ventas (Node.js)
+const NODE_API_URL = "http://localhost:4000/api/ventas";// Para Ventas (Node.js)
 const FLASK_API_URL = "http://localhost:5000/api"; // Para Productos (Flask)
 
 export default function GestionVentas() {
@@ -39,24 +39,24 @@ export default function GestionVentas() {
   }, [rol, userId, filtroCliente, filtroFechaFin, filtroFechaInicio]);
 
   const obtenerVentas = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: { 'Authorization': `Bearer ${token}` },
-        params: {
-          fechaInicio: filtroFechaInicio,
-          fechaFin: filtroFechaFin,
-          cliente: filtroCliente,
-        }
-      };
-      const res = await axios.get(`${NODE_API_URL}/ventas`, config);
-      console.log("Ventas obtenidas del backend:", res.data);
-      setVentas(res.data);
-    } catch (error) {
-      console.error("Error al obtener ventas:", error.response?.status, error.response?.data?.error || error.message);
-      alert("Error al cargar las ventas. Asegúrate de que el backend de Node.js esté corriendo correctamente y de que el token sea válido.");
-    }
-  };
+  try {
+    const token = localStorage.getItem('token');
+    const config = {
+      headers: { 'Authorization': `Bearer ${token}` },
+      params: {
+        fechaInicio: filtroFechaInicio,
+        fechaFin: filtroFechaFin,
+        cliente: filtroCliente,
+      }
+    };
+    const res = await axios.get(NODE_API_URL, config);
+    console.log("Ventas obtenidas del backend:", res.data);
+    setVentas(res.data);
+  } catch (error) {
+    console.error("Error al obtener ventas:", error.response?.status, error.response?.data?.error || error.message);
+    alert("Error al cargar las ventas.");
+  }
+};
 
   const obtenerProductosDisponibles = async () => {
     try {
@@ -120,22 +120,22 @@ export default function GestionVentas() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const ventaParaEnviar = { ...formularioVenta, vendedorId: userId };
+    const token = localStorage.getItem('token');
+    const config = { headers: { 'Authorization': `Bearer ${token}` } };
+    const ventaParaEnviar = { ...formularioVenta, vendedorId: userId };
 
-      await axios.post(`${NODE_API_URL}/ventas`, ventaParaEnviar, config);
-      alert("Venta registrada exitosamente!");
+    await axios.post(NODE_API_URL, ventaParaEnviar, config);
+    alert("Venta registrada exitosamente!");
       setFormularioVenta({
         clienteNombre: '', productosSeleccionados: [], total: 0, fecha: new Date().toISOString().split('T')[0],
       });
       obtenerVentas();
       obtenerProductosDisponibles();
     } catch (error) {
-      console.error("Error al registrar venta:", error.response?.status, error.response?.data?.error || error.message);
-      alert(`Error al registrar la venta: ${error.response?.data?.error || error.message}`);
-    }
-  };
+    console.error("Error al registrar venta:", error.response?.status, error.response?.data?.error || error.message);
+    alert(`Error al registrar la venta: ${error.response?.data?.error || error.message}`);
+  }
+};
 
   const handleFiltroChange = (e) => {
     if (e.target.name === "fechaInicio") setFiltroFechaInicio(e.target.value);
