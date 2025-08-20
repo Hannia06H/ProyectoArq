@@ -59,16 +59,44 @@ export default function GestionVentas() {
   };
 
   const obtenerProductosDisponibles = async () => {
-    try {
-      const res = await axios.get(`${FLASK_API_URL}/productos`);
-      const productosMap = res.data.map(p => ({
-        id: p[0], nombre: p[1], descripcion: p[2], precio: parseFloat(p[3]), categoria: p[4], stock: parseInt(p[5]),
+  try {
+    // 1) Intentar el endpoint de reportes (objetos)
+    const r1 = await axios.get(`${FLASK_API_URL}/reportes/productos`, { timeout: 8000 });
+    const data1 = r1.data;
+    if (Array.isArray(data1) && data1.length >= 0 && (data1[0] === undefined || typeof data1[0] === 'object')) {
+      const productosMap = data1.map(p => ({
+        id: Number(p.id),
+        nombre: p.nombre,
+        descripcion: p.descripcion,
+        precio: Number(p.precio),
+        categoria: p.categoria,
+        stock: Number(p.stock),
       }));
       setProductosDisponibles(productosMap);
-    } catch (error) {
-      console.error("Error al obtener productos disponibles:", error.response?.status, error.response?.data?.error || error.message);
+      return;
     }
-  };
+    throw new Error('Formato inesperado en /reportes/productos');
+  } catch (e1) {
+    console.warn('Fallo /reportes/productos, probando /productos:', e1?.message);
+    try {
+      // 2) Fallback: /api/productos (tuplas)
+      const r2 = await axios.get(`${FLASK_API_URL}/productos`, { timeout: 8000 });
+      const data2 = r2.data; // array de tuplas
+      const productosMap = (Array.isArray(data2) ? data2 : []).map(p => ({
+        id: Number(p.id ?? p[0]),
+        nombre: p.nombre ?? p[1],
+        descripcion: p.descripcion ?? p[2],
+        precio: Number(p.precio ?? p[3]),
+        categoria: p.categoria ?? p[4],
+        stock: Number(p.stock ?? p[5]),
+      }));
+      setProductosDisponibles(productosMap);
+    } catch (e2) {
+      console.error("Error al obtener productos:", e2.response?.status, e2.response?.data || e2.message);
+      alert("Error al cargar productos. Verifica que Flask esté en http://localhost:5000 y que /api/reportes/productos o /api/productos respondan.");
+    }
+  }
+};
 
   const handleVentaChange = (e) => {
     setFormularioVenta({ ...formularioVenta, [e.target.name]: e.target.value });
