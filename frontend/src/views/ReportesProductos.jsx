@@ -270,8 +270,8 @@ const ReportesProductos = () => {
             id: item.id,
             nombre: item.nombre,
             descripcion: item.descripcion,
-            precio: parseFloat(item.precio),
-            precioFormateado: `$${parseFloat(item.precio).toFixed(2)}`,
+            precio: parseFloat(item.precio_venta),
+            precioFormateado: `$${parseFloat(item.precio_venta).toFixed(2)}`,
             categoria: item.categoria,
             stock: item.stock
         }));
