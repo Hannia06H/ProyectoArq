@@ -209,34 +209,35 @@ const ReportesUsuarios = () => {
   };
 
   // Obtener datos de la API
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get('http://localhost:4000/api/usuarios', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        const usuarios = response.data;
-        setDatos(
-          usuarios.map((u) => ({
-            ...u,
-            createdAt: new Date(u.createdAt).toLocaleDateString(),
-            ultimoAcceso: u.ultimoAcceso
-              ? new Date(u.ultimoAcceso).toLocaleDateString()
-              : 'Nunca',
-          }))
-        );
-      } catch (err) {
-        setError(`Error al cargar usuarios: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Actualizar la URL de la API de usuarios
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('http://localhost:4000/api/users', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const usuarios = response.data;
+      const datosTransformados = usuarios.map((u) => ({
+        ...u,
+        rol: u.rol?.nombre || 'Sin rol', // Acceder al nombre del rol
+        createdAt: new Date(u.createdAt).toLocaleDateString(),
+        ultimoAcceso: u.ultimoAcceso
+          ? new Date(u.ultimoAcceso).toLocaleDateString()
+          : 'Nunca',
+      }));
+      setDatos(datosTransformados);
+    } catch (err) {
+      setError(`Error al cargar usuarios: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
-  }, []);
+  fetchData();
+}, []);
 
   // Ordenar datos
   const requestSort = (key) => {

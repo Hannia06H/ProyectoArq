@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginForm from './components/loginForm';
 import GestionProductos from './views/GestionProductos';
-import GestionVentas from './views/GestionVentas'; // Nuevo componente para ventas
+import GestionVentas from './views/GestionVentas';
 import GestionUsuarios from './views/GestionUsuarios';
 import RequireRole from './components/RequireRole';
 import ReportesUsuarios from './views/ReportesUsuarios';
@@ -25,9 +25,7 @@ function App() {
           }
         />
 
-  
-
-        {/* Ventas: SOLO Vendedor (no Consultor) */}
+        {/* Ventas: SOLO Vendedor y Administrador */}
         <Route
           path="/ventas"
           element={
@@ -76,3 +74,5 @@ function App() {
     </BrowserRouter>
   );
 }
+
+export default App;
