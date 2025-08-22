@@ -42,7 +42,7 @@ export default function GestionProductos() {
         precio_compra: producto[3] || 0,
         precio_venta: producto[4] || 0,
         categoria_id: producto[5] || "",
-        stock: producto[6] || 0
+        stock: producto[7] || 0
       }));
       
       setProductos(productosTransformados);

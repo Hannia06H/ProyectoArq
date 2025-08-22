@@ -28,10 +28,10 @@ export default function GestionVentas() {
 
   useEffect(() => {
     // Puedes comentar esta sección temporalmente para depurar la UI sin el rol
-    // if (rol !== "Vendedor" && rol !== "Administrador" && rol !== "Consultor") {
-    //   console.warn("Acceso denegado. Solo los vendedores, administradores y consultores pueden acceder a esta sección.");
-    //   return;
-    // }
+    if (rol !== "Vendedor" && rol !== "Administrador" && rol !== "Consultor") {
+    console.warn("Acceso denegado. Solo los vendedores, administradores y consultores pueden acceder a esta sección.");
+    return;
+    }
 
     obtenerVentas();
     obtenerProductosDisponibles();
@@ -68,7 +68,7 @@ export default function GestionVentas() {
         id: Number(p.id),
         nombre: p.nombre,
         descripcion: p.descripcion,
-        precio: Number(p.precio),
+        precio: Number(p.precio_venta),
         categoria: p.categoria,
         stock: Number(p.stock),
       }));
@@ -86,7 +86,7 @@ export default function GestionVentas() {
         id: Number(p.id ?? p[0]),
         nombre: p.nombre ?? p[1],
         descripcion: p.descripcion ?? p[2],
-        precio: Number(p.precio ?? p[3]),
+        precio: Number(p.precio_venta ?? p[3]),
         categoria: p.categoria ?? p[4],
         stock: Number(p.stock ?? p[5]),
       }));

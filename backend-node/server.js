@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-// backend-node/server.js
-require("dotenv").config();
-=======
->>>>>>> R_E_Roles
+
 const express = require("express");
 const connectDB = require("./config/db");
 const cors = require("cors");

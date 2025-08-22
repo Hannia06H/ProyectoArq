@@ -31,17 +31,10 @@ const authorizeRoles = (roles) => {
 };
 
 // Ruta para registrar una nueva venta (POST /api/ventas)
-<<<<<<< HEAD
 router.post('/', authenticateToken, authorizeRoles(['Vendedor', 'Administrador']), async (req, res) => {
     try {
         const { productosSeleccionados, total, clienteNombre, fecha } = req.body;
         const vendedorId = req.user.userId; // Obtenido del payload del token
-=======
-router.post('/', authenticateToken, authorizeRoles(['Vendedor']), async (req, res) => {
-  try {
-    const { productosSeleccionados, total, clienteNombre, fecha } = req.body;
-    const vendedorId = req.user.userId;
->>>>>>> b1f265f673d80f3ed4b29c8a528692379db25465
 
     if (!vendedorId || !clienteNombre || !Array.isArray(productosSeleccionados) || productosSeleccionados.length === 0 || total === undefined) {
       return res.status(400).json({ error: 'Faltan campos obligatorios para registrar la venta.' });
